@@ -1,0 +1,18 @@
+{
+  "name": "library-database-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Library managment system for Imperial Sci-fi Fantasy Society",
+  "scripts": {
+  },
+  "license": "UNLICENSED",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.3.4",
+      "onFail": "download"
+    }
+  },
+  "packageManager": "pnpm@12.3.4",
+  "type": "module"
+}
