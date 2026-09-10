@@ -1,2 +1,24 @@
 .env
 node_modules
+
+# DB
+packages/db/generated/prisma
+packages/db/.agents/
+packages/db/.claude/
+packages/db/.windsurf/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.iml
+*.swp
+*.swo
+*.tsbuildinfo
+
+# Logss
+logs/
+*.log

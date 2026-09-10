@@ -1,0 +1,20 @@
+{
+  "name": "@library/db",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.ts",
+  "types": "index.ts",
+  "scripts": {
+    "generate": "prisma generate",
+    "push": "prisma db push",
+    "studio": "prisma studio"
+  },
+  "type": "module",
+  "devDependencies": {
+    "dotenv": "^17.4.2",
+    "prisma": "^7.10.0"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.10.0"
+  }
+}
