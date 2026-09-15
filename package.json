@@ -10,5 +10,8 @@
   },
   "license": "UNLICENSED",
   "packageManager": "pnpm@12.3.4",
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "vercel": "^59.16.0"
+  }
 }
