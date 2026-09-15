@@ -1,184 +1,531 @@
-.counter {
-  font-size: 16px;
-  padding: 5px 10px;
-  border-radius: 5px;
-  color: var(--accent);
-  background: var(--accent-bg);
-  border: 2px solid transparent;
-  transition: border-color 0.3s;
-  margin-bottom: 24px;
 
-  &:hover {
-    border-color: var(--accent-border);
-  }
-  &:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
+/* Give the body some margins to make room for the two menus */
+html {
+  margin: 0 
+}
+body {
+    position: relative;		/* Make containing block for the menus */
+    padding: 0.7em 1em 1em 13em;	/* Room for menu on the left */
+    margin: 0;
+    background-color : #55708d;
+    font-family: sans-serif;
+    font-size : 0.95em;
 }
 
-.hero {
-  position: relative;
+/* common styles */
 
-  .base,
-  .framework,
-  .vite {
-    inset-inline: 0;
-    margin: 0 auto;
-  }
+/* dark background */
+.bodyDark, div.menubar th, h1, h2, h3  {
+	background-color : #000033;
+	color : #fbffff;
+}
 
-  .base {
-    width: 170px;
-    position: relative;
-    z-index: 0;
-  }
+h1, h2, h3 {
+    margin : 0;
+    margin-left : -10;
+    padding-left: 15;
+    display : inline-block; /* fixes peekaboo bug in IE */
+}
 
-  .framework,
-  .vite {
+h1 { font-size: 1.4em; }
+h2 { font-size: 1.3em; }
+h3 { font-size: 1.2em; }
+h4 { font-size: 1.1em; }
+
+h2, h3 {
+    margin-top: 15; 
+    margin-bottom: 15;
+}
+
+p {
+    padding-right: 7;
+}
+
+/* light background */
+.bodyLight, .main  {
+	background-color : #fbffff;
+	color : #000011;
+}
+
+.main {
+    padding-left : 15;
+    padding-right : 5;
+    padding-top : 5;
+    padding-bottom : 10;
+}
+
+/* black border */
+.main, .menubar table, .topbar {
+    border: thin solid black;
+}
+
+/* Internal Table colourings */
+.list {
+    border-collapse:collapse;	
+    border-bottom : #c8ddf0 solid 2px;
+}
+
+.bg1, .bg1 th, .bg1 td {
+    background-color : #EEEEEE;
+    margin-top: 12px;
+    padding-bottom: 4px;
+    padding-left: 7px;
+    border-top: #c8ddf0 solid 3px;
+    background-color: #dfefff; 
+}
+.bg2, .bg2 td {
+    background-color : white;
+    padding-left: 7px;
+    border-bottom: #dfefff solid 1px;
+}
+.bg3, .bg3 td {
+    padding-left: 7px;
+    background-color : #F5F9F9;
+    border-bottom: #dfefff solid 1px;
+}
+
+/* help/info text */
+.help, .info {
+    font-size : smaller;
+    color : #34506d;
+}
+.help {
+    font-style : italic;
+}
+
+/* warning text */
+.warning {
+    font-weight : bold;
+    color : #ff0000;
+}
+
+/* error text */
+.error {
+    font-style : italic;
+    color : #dd0000;
+}
+
+/* alert text */
+.alert {
+    font-weight : bold;
+    color : #FFFFFF;
+    background-color: #CC0000;
+    padding: 1px;
+}
+
+/* overdue text */
+.overdue {
+    font-weight : bold;
+    padding: 1px;
+}
+.o0 {
+    color: #5C500F;
+}
+.o1 {
+    color: #C19719;
+}
+.o2 {
+    color: #DB7B14;
+}
+.o3 {
+    color: #DB5817;
+}
+.o4 {
+    color: #DB3E0D;
+}
+.o5 {
+    color: #CC0000;
+}
+
+/* quote text (eg in top bar) */
+.quote {
+    font-style : italic;
+    color : #34506d;
+}
+
+/* Top bar */
+
+.topbar {
+    background-color : #c8ddf0;
+    margin-top: 0;
+    margin-bottom: 10;
+    padding: 3;
+}
+
+.topbar table {
+    border : 0;
+    margin : 0;
+    padding : 0;
+}
+
+.topbar table tr td {
+    font-size: smaller;
+    font-style: italic;
+}
+
+.yearSwitch {
+      display : inline;
+      text-align: left;
+      margin-right : 30px;
+}
+.yearSwitch form {
+	display:inline; 
+       border:0; 
+       margin:0;
+}
+
+/* Menubar positioning and backgrounds */
+
+div.menubar {
     position: absolute;
-  }
-
-  .framework {
-    z-index: 1;
-    top: 34px;
-    height: 28px;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
-      scale(1.4);
-  }
-
-  .vite {
-    z-index: 0;
-    top: 107px;
-    height: 26px;
-    width: auto;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
-      scale(0.8);
-  }
+    height: auto;
+    top: 0.5em; right: auto; bottom: 1em; left: 1em; 
 }
 
-#center {
-  display: flex;
-  flex-direction: column;
-  gap: 25px;
-  place-content: center;
-  place-items: center;
-  flex-grow: 1;
-
-  @media (max-width: 1024px) {
-    padding: 32px 20px 24px;
-    gap: 18px;
-  }
+div.menubar, .menubar table {
+    width: 11em; 
 }
 
-#next-steps {
-  display: flex;
-  border-top: 1px solid var(--border);
-  text-align: left;
-
-  & > div {
-    flex: 1 1 0;
-    padding: 32px;
-    @media (max-width: 1024px) {
-      padding: 24px 20px;
-    }
-  }
-
-  .icon {
-    margin-bottom: 16px;
-    width: 22px;
-    height: 22px;
-  }
-
-  @media (max-width: 1024px) {
-    flex-direction: column;
-    text-align: center;
-  }
+.menubar table {
+    background-color: #c8ddf0;
+    padding-bottom: 120;
+    border-collapse: collapse;
 }
 
-#docs {
-  border-right: 1px solid var(--border);
-
-  @media (max-width: 1024px) {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-  }
+.menubar td {
+    padding-left: 7;
+    padding-right: 7;
+    padding-top: 2;
+    padding-bottom: 3;
 }
 
-#next-steps ul {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  gap: 8px;
-  margin: 32px 0 0;
-
-  .logo {
-    height: 18px;
-  }
-
-  a {
-    color: var(--text-h);
-    font-size: 16px;
-    border-radius: 6px;
-    background: var(--social-bg);
-    display: flex;
-    padding: 6px 12px;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    transition: box-shadow 0.3s;
-
-    &:hover {
-      box-shadow: var(--shadow);
-    }
-    .button-icon {
-      height: 18px;
-      width: 18px;
-    }
-  }
-
-  @media (max-width: 1024px) {
-    margin-top: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
-
-    li {
-      flex: 1 1 calc(50% - 8px);
-    }
-
-    a {
-      width: 100%;
-      justify-content: center;
-      box-sizing: border-box;
-    }
-  }
+.menubar a:Link  {
+	text-decoration : none;
+	color : #300011;
 }
 
-#spacer {
-  height: 88px;
-  border-top: 1px solid var(--border);
-  @media (max-width: 1024px) {
-    height: 48px;
-  }
+.menubar a:Visited  {
+	text-decoration : none;
+	color : #300011;
 }
 
-.ticks {
-  position: relative;
-  width: 100%;
+.menubar a:Active  {
+	text-decoration : none;
+	color : #ff0000;
+	background-color : #fbffff;
+}
 
-  &::before,
-  &::after {
-    content: '';
-    position: absolute;
-    top: -4.5px;
-    border: 5px solid transparent;
-  }
+.menubar a:Hover  {
+	text-decoration : underline;
+	color : #ee0000;
+	background-color : #fbffff;
+}
 
-  &::before {
-    left: 0;
-    border-left-color: var(--border);
-  }
-  &::after {
-    right: 0;
-    border-right-color: var(--border);
-  }
+#logo:Hover  {
+	background-color : transparent;
+}
+
+.menubar ul {
+    list-style: square inside;
+    padding-left : 2;
+    margin : 0;
+    font-size: smaller;
+}
+
+.submenu {
+	color : #34506d;
+	font-weight : bold;
+	font-style : italic;
+}
+
+/* Links */
+
+a:Link  {
+	text-decoration : none;
+	color : #cc0000;
+}
+
+a:Visited  {
+	text-decoration : none;
+	color : #cc0000;
+}
+
+a:Hover  {
+	text-decoration : underline;
+	color : #ff0000;
+}
+
+a:Active  {
+	text-decoration : underline;
+	color : #ff0000;
+}
+
+
+a.subtle:Link {
+    color : #000000;
+}
+
+a.subtle:Visited {
+    color : #000000;
+}
+
+a.subtle:Hover {
+    color : #ff0000;
+}
+
+a.subtle:Active {
+    color : #ff0000;
+}
+
+
+.help a.subtle {
+    color : #34506d;
+}
+.help a.subtle:Visited {
+    color : #34506d;
+}
+.help a.subtle:Hover {
+    color : #ff0000;
+}
+.help a.subtle:Active {
+    color : #ff0000;
+}
+
+/* subtle title */
+b.subtle, th.subtle, tr.subtle th {
+    font-weight : bold;
+    color : #557cae;
+}
+
+
+/* Tables */
+
+tr {
+    vertical-align: top;
+}
+
+td {
+    vertical-align: top;
+}
+
+/* Forms */
+
+form {
+    padding : 8px;
+    margin-right : 10px;
+    border : #c8ddf0 dotted 2px ;
+    color : #34506d;
+    font-size : smaller;
+}
+form.inplaceeditor-form {
+    padding : 0;
+    margin : 0;
+    border : 0;
+    color : inherit;
+    font-size : 100%;
+}
+form.inplaceeditor-form .editor_ok_button {
+    margin-right : 5px;
+}
+
+form table {
+    margin-top : 0;
+}
+
+form td {
+    padding-top : 0;
+    padding-bottom : 4px;
+    padding-right : 5px;
+    color : #34506d;
+    font-size : smaller;
+    font-weight : bold;
+}
+
+form table.list td {
+    font-weight : normal;
+}
+
+form h2 {
+    margin-top : -9px;
+    margin-right : -9px;
+    background-color : #34506d;
+    color : white;
+}
+
+/* used on select options which have an item type image (e.g. book) as background. */
+option.backed {
+    background-repeat:no-repeat;
+    padding-left:20px;
+}
+
+td.required:before {
+    content : "* ";
+    color : #dd0000;
+}
+
+/* Definition lists  from http://www.maxdesign.com.au/presentation/definition/dl-table-display.htm */
+dl {
+    clear : left;
+}
+
+dt {
+    width: 150px;
+    float: left;
+    clear : left;
+    border-top: 1px solid #999;
+}
+
+dd {
+    padding-left : 150px;
+    border-top: 1px solid #999;
+}
+
+/*
+.legend {
+    font-size : larger;
+    font-weight : bold;
+    display : float;
+    margin-top : -1.3em;
+    margin-left : 0.5em;
+    margin-right : 100;
+    padding-left : 5px;
+    padding-right : 5px;
+    padding-top : 2px;
+    padding-bottom : 2px;
+    border : #c8ddf0 dotted 2px;
+    background-color : white;
+    color : #34506d;
+}
+*/
+
+/* Predictions */
+.favourites {
+    font-size : 0.75em;
+}
+
+div.predictions table {
+    color : #999999;
+}
+
+/* Print style */
+
+body.print {
+    padding: 1em 1em 1em 1em;
+    margin: 0;
+    font-family: sans-serif;
+    background-color : white;
+}
+
+.print table {
+    border-style : none;
+    border-collapse : collapse;
+    font-size : x-small;
+}
+.print td {
+    border-bottom : #cccccc solid 1px;
+}
+
+.print th {
+    padding-top : 10px;
+    font-size : larger;
+    font-weight : bold;
+    text-align : left;
+    border-bottom : #cccccc solid 8px;
+}
+
+.print h2 {
+    font-size : large;
+    border-bottom : #666666 solid 5px;
+    padding : 0;
+    margin : 0;
+}
+
+/* Readonly form input field */
+input.readonly {
+    border : #c8ddf0 solid 1px;
+    background-color : transparent;
+    color : #444444;
+}
+textarea.readonly {
+    border : #c8ddf0 solid 1px;
+    background-color : transparent;
+    color : #444444;
+    height : auto;
+}
+.hidden {
+    display : none;
+}
+.visible_inline {
+    display : inline;
+}
+.visible_block {
+    display : block;
+}
+
+div.notice {
+    background-color : #E4F1F8;
+    border : #c8ddf0 dotted 2px;
+    margin : 10px 350px 10px 10px;
+    padding : 5px 10px 10px 10px;
+}
+
+div.notice h4 {
+    background-color : transparent;
+    margin : 0 0 5px 0;
+    padding-left : 5px;
+    color : #34506d;
+}
+
+div.notice span {
+    background-color : white;  
+    padding : 5px;
+    font-size : smaller;
+}
+
+
+/* Add Item form: container for reporting AJAX-fetched similar items while the form is filled in. */
+
+div#similarItemsContainer {
+  margin : 10px 15px 10px 10px;
+  padding : 0px;
+  border : 2px dotted #dfefff ;
+  float : right;
+}
+div#similarItemsBox {
+  padding : 10px;
+  background-color : #F5F9F9;
+}
+div#similarItemsBox .items {
+  width : 300px;
+  height : 100px;
+  overflow : auto;
+}
+div#similarItemsBox .heading {
+  font-size : 0.9em;
+  font-weight : bold;
+  padding : 0;
+}
+div#similarItemsBox .item {
+  font-size : 0.9em;
+  padding : 0 0 0 10px;
+}
+div#similarItemsBox .item .series {
+  font-size : 0.8em;
+  font-style : italic;
+}
+div#similarItemsBox .item .location {
+  font-size : 0.8em;
+  font-style : italic;
+  margin : 0 0 0 20px;
+}
+div#similarItemsBox .item .status {
+  font-size : 0.8em;
+  font-style : italic;
+  color : #dd0000;
+  background-color : #FFFF99;
+  margin : 0 0 0 20px;
+}
+
+.absent {
+  text-decoration: line-through;
 }

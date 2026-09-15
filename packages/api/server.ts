@@ -18,22 +18,17 @@ server.listen(env.PORT, () => {
   console.log(`API server running on http://localhost:${env.PORT}`);
 });
 
-let shuttingDown = false;
-
-// clean shutdown function to close the database connection when the server is stopped
+// clean shutdown function to close HTTP and database connections when stopped
 async function shutdown(): Promise<void> {
-  if (shuttingDown) {
-    return;
-  }
+  server.close();
+  server.closeAllConnections();
 
-  shuttingDown = true;
-
-  server.close(async () => {
+  try {
     await disconnectPrisma();
-    process.exit(0);
-  });
+  } finally {
+    process.exit();
+  }
 }
 
-// exit database connection when the server is stopped
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
+process.once('SIGINT', () => void shutdown());
+process.once('SIGTERM', () => void shutdown());
