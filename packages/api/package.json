@@ -2,12 +2,8 @@
   "name": "@library/api",
   "version": "1.0.0",
   "private": true,
-  "exports": {
-    ".": {
-      "types": "./index.ts",
-      "import": "./index.ts"
-    }
-  },
+  "main": "index.ts",
+  "types": "index.ts",
   "scripts": {
     "dev": "tsx watch server.ts",
     "typecheck": "tsc --noEmit"
