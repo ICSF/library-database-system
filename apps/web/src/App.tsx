@@ -8,7 +8,7 @@ function App() {
   const [latencyMs, setLatencyMs] = useState<number | null>(null)
 
   useEffect(() => {
-    fetch('/api/trpc/health')
+    fetch('/api/health')
       .then((response) => {
         if (!response.ok) {
           throw new Error('Health check failed')
