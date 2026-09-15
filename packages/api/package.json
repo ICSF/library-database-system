@@ -13,8 +13,7 @@
     "@library/db": "workspace:*",
     "@library/config": "workspace:*",
     "@trpc/server": "^11.0.0",
-    "cors": "^2.8.5",
-    "zod": "^3.24.0"
+    "cors": "^2.8.5"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

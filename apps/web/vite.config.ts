@@ -1,17 +1,19 @@
-import {env} from '@library/config'
 import react from '@vitejs/plugin-react'
-import {defineConfig} from 'vite'
+import {defineConfig, loadEnv} from 'vite'
 
-// https://vite.dev/config/
-export default defineConfig({
-  plugins: [react()],
-  envDir: '../..',
-  server: {
-    proxy: {
-      '/api/trpc': {
-        target: `http://localhost:${env.PORT}`,
-        rewrite: (path) => path.replace(/^\/api\/trpc/, ''),
+export default defineConfig(({mode}) => {
+  const env = loadEnv(mode, '../..', '');
+  const port = env.PORT ?? '4000';
+
+  return {
+    plugins: [react()], envDir: '../..', server: {
+      proxy: {
+        '/api': {
+          target: `http://localhost:${port}`,
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api/, ''),
+        },
       },
     },
-  },
+  }
 })
