@@ -13,5 +13,9 @@
   "type": "module",
   "devDependencies": {
     "vercel": "^59.16.0"
+  },
+  "dependencies": {
+    "@library/api": "workspace:*",
+    "@trpc/server": "^11.0.0"
   }
 }

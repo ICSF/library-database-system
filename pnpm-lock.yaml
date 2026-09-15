@@ -108,6 +108,13 @@ settings:
 importers:
 
   .:
+    dependencies:
+      '@library/api':
+        specifier: workspace:*
+        version: link:packages/api
+      '@trpc/server':
+        specifier: ^11.0.0
+        version: 11.18.0(typescript@6.0.3)
     devDependencies:
       vercel:
         specifier: ^59.16.0
