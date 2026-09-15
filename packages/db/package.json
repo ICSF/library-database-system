@@ -2,12 +2,8 @@
   "name": "@library/db",
   "version": "1.0.0",
   "private": true,
-  "exports": {
-    ".": {
-      "types": "./index.ts",
-      "import": "./index.ts"
-    }
-  },
+  "main": "index.ts",
+  "types": "index.ts",
   "scripts": {
     "generate": "prisma generate",
     "studio": "prisma studio"
