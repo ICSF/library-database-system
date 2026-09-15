@@ -11,11 +11,11 @@
   "license": "UNLICENSED",
   "packageManager": "pnpm@12.3.4",
   "type": "module",
-  "devDependencies": {
-    "vercel": "^59.16.0"
-  },
   "dependencies": {
     "@library/api": "workspace:*",
     "@trpc/server": "^11.0.0"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.2"
   }
 }
