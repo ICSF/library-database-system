@@ -19,7 +19,7 @@ server.listen(env.PORT, () => {
 });
 
 // clean shutdown function to close HTTP and database connections when stopped
-/*async function shutdown(): Promise<void> {
+async function shutdown(): Promise<void> {
   server.close();
   server.closeAllConnections();
 
@@ -31,4 +31,4 @@ server.listen(env.PORT, () => {
 }
 
 process.once('SIGINT', () => void shutdown());
-process.once('SIGTERM', () => void shutdown());*/
+process.once('SIGTERM', () => void shutdown());
