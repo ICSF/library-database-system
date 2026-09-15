@@ -64,6 +64,7 @@ model items {
   is_borrowable Boolean     @default(true)
   is_retired    Boolean     @default(false)
   retire_date   DateTime?   @db.Date
+  ISBN          String?
   authors       authors     @relation(fields: [author_id], references: [author_id])
   locations     locations   @relation(fields: [location_id], references: [location_id])
   media_types   media_types @relation(fields: [type_id], references: [media_type_id])

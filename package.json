@@ -4,15 +4,14 @@
   "private": true,
   "description": "Library managment system for Imperial Sci-fi Fantasy Society",
   "scripts": {
+    "dev": "dotenv -e .env -- pnpm -r --parallel run dev",
+    "start": "dotenv -e .env -- pnpm -r run start",
+    "build": "dotenv -e .env -- pnpm -r run build"
   },
   "license": "UNLICENSED",
-  "devEngines": {
-    "packageManager": {
-      "name": "pnpm",
-      "version": "12.3.4",
-      "onFail": "download"
-    }
-  },
   "packageManager": "pnpm@12.3.4",
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "dotenv-cli": "^11.0.0"
+  }
 }
