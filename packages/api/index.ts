@@ -7,29 +7,6 @@ const t = initTRPC.create();
 const HARD_MAX_ROWS = 20000;
 
 export const appRouter = t.router({
-  // health check
-  health: t.procedure.query(async () => {
-    const start = Date.now();
-
-    try {
-      await prisma.$connect();
-
-      return {
-        status: 'ok' as const,
-        db: 'connected' as const,
-        latencyMs: Date.now() - start,
-      };
-    } catch (err) {
-      console.error('[health check] DB connection failed:', err);
-
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: `Database health check failed`,
-        cause: err,
-      });
-    }
-  }),
-
   // Catalogue List endpoint: returns a list of catalogue items, from the catalogue_search view
   catalogueList: t.procedure.query(async () => {
     try {
