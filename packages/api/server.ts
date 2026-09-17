@@ -7,11 +7,11 @@ import cors from 'cors';
 
 import {appRouter} from './index';
 
+const ALLOWED_ORIGINS = ['http://localhost:5173'];
+
 const server = createHTTPServer({
   router: appRouter,
-  middleware: cors({
-    origin: 'http://localhost:5173',
-  }),
+  middleware: cors({origin: ALLOWED_ORIGINS}),
 });
 
 server.listen(env.PORT, () => {
