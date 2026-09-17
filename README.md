@@ -170,6 +170,10 @@ DATABASE_URL=your PostgreSQL connection string
 NODE_ENV=production
 ```
 
-For the production DATABASE_URL, use Supabase's **pooled** connection string, rather than the direct connection.
+For the production DATABASE_URL, use Supabase's **transaction pooler** connection string, rather than the direct connection. This is ideal for serverless functions, as is deployed on Vercel.
 
 Vercel deploys new commits automatically when connected to GitHub.
+
+//TODO:
+- write abt pulling from db when schema changes
+- say use session pooler/direct connection url when developing.
