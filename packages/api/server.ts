@@ -1,6 +1,6 @@
 // server setup for local development
 
-import {env} from '@library/config/load-env';
+import {env} from '@library/config/';
 import {disconnectPrisma} from '@library/db';
 import {createHTTPServer} from '@trpc/server/adapters/standalone';
 import cors from 'cors';
