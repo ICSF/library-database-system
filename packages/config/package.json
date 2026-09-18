@@ -1,10 +1,18 @@
 {
   "name": "@library/config",
+  "exports": {
+    ".": {
+      "types": "./index.ts",
+      "default": "./index.ts"
+    },
+    "./db": {
+      "types": "./base.ts",
+      "default": "./base.ts"
+    }
+  },
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "main": "index.ts",
-  "types": "index.ts",
   "dependencies": {
     "dotenv": "^17.4.2",
     "zod": "^3.24.0"

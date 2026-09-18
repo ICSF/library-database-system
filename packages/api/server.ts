@@ -1,16 +1,17 @@
 // server setup for local development
 
-import {env} from '@library/config';
+import {env} from '@library/config/';
 import {disconnectPrisma} from '@library/db';
 import {createHTTPServer} from '@trpc/server/adapters/standalone';
 import cors from 'cors';
 
-import {appRouter} from './index';
+import {appRouter, createContext} from './index';
 
 const ALLOWED_ORIGINS = ['http://localhost:5173'];
 
 const server = createHTTPServer({
   router: appRouter,
+  createContext,
   middleware: cors({origin: ALLOWED_ORIGINS}),
 });
 

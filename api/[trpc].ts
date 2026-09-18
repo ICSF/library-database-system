@@ -1,18 +1,20 @@
-import {appRouter} from '@library/api';
+import {appRouter, createContext} from '@library/api';
 import {createHTTPHandler} from '@trpc/server/adapters/standalone';
 import cors from 'cors';
 import type {IncomingMessage, ServerResponse} from 'node:http';
 
 // set cors allowed origin for the info website too as it calls this API for catalogue
-const ALLOWED_ORIGINS = ['https://icsf.github.io'];
+const ALLOWED_ORIGINS = ['https://icsf.github.io', 'http://localhost:5173'];
 
 const corsMiddleware = cors({
   origin: ALLOWED_ORIGINS,
   methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'], // for auth
 });
 
 const trpcHandler = createHTTPHandler({
   router: appRouter,
+  createContext, // supabase jwt verification per request
   basePath: '/api/',
   responseMeta(opts) {
     // cache just the public catalogue listing

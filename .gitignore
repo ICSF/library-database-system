@@ -41,3 +41,6 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 .vercel
+
+# TODO: remove later
+library-database-website
