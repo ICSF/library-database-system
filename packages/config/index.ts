@@ -14,6 +14,10 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   // port for the API server to listen on, defaults to 4000
   PORT: z.coerce.number().default(4000),
+  // supabase project url
+  SUPABASE_URL: z.string().url(),
+  // supabase secret key - server-only 
+  SUPABASE_SECRET_KEY: z.string().min(1),
 });
 
 const result = envSchema.safeParse(process.env);
