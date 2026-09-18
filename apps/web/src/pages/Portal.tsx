@@ -5,11 +5,17 @@
 import { useAuth } from '../auth/useAuth';
 
 export function Portal() {
-  const { session } = useAuth();
+  const { profile, profileLoading } = useAuth();
   return (
     <>
       <h1>Welcome to the ICSF Library Database</h1>
-      <p className='help'>You are logged in as {session?.user.email}</p>
+      <p className='help'>
+        {
+          profileLoading ? 'Loading your profile...'
+          : profile?.accessRole === 'librarian' ? 'You are logged in as the Head Librarian. Welcome O Great One.'
+          : `You are logged in as ${profile?.role}. This allows you to loan or return items and add new members.`
+        }
+      </p>
 
       {/* Show some basic statistics for general interest and education */}
       <p className='info'><b>Library Statistics:</b><br></br>
