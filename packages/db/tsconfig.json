@@ -10,5 +10,8 @@
     "esModuleInterop": true
   },
   "include": ["**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules"],
+  "engines": {
+    "node": ">=22.0.0"
+  }
 }
