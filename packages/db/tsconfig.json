@@ -2,8 +2,6 @@
   "compilerOptions": {
     "types": ["node"],
     "allowImportingTsExtensions": true,
-    "noEmit": true,
-    "moduleResolution": "bundler",
-    "module": "esnext"
+    "noEmit": true
   }
 }
