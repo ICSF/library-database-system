@@ -11,7 +11,7 @@ if (!apiUrl) {
 export const trpc = createTRPCProxyClient<AppRouter>({
   links: [
     httpBatchLink({
-      url: `${apiUrl}/api`,
+      url: `${apiUrl}`,
       async headers() {
         const {
           data: { session },

@@ -7,6 +7,9 @@ import { env } from '@library/config';
 //TODO: move elsewjere
 const HARD_MAX_ROWS = 20000;
 
+// only 2 access roles
+export type CommitteeAccessRole = 'committee' | 'librarian';
+
 // Server-side only Supabase client, used purely to verify tokens the
 // frontend sends us. Uses the SERVICE ROLE key - never ship this to a browser.
 const supabaseAdmin = createClient(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY);
@@ -80,6 +83,27 @@ export const appRouter = t.router({
     }
   }),
 
+  // who's signed in + committee role + access role
+  me: protectedProcedure.query(async ({ ctx }) => {
+    const committeeRow = await prisma.committee.findUnique({
+      where: { user_id: ctx.user.id },
+      select: { access_role: true, role: true },
+    });
+
+    if (!committeeRow) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'No committee record found for this account.',
+      });
+    }
+
+    return {
+      id: ctx.user.id,
+      email: ctx.user.email,
+      accessRole: committeeRow.access_role as CommitteeAccessRole,
+      role: committeeRow.role,
+    };
+  }),
 
 });
 
