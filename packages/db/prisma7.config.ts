@@ -1,4 +1,4 @@
-import {env} from '@library/config/db.js';
+import {env} from '@library/config';
 import {defineConfig} from 'prisma/config';
 
 // sets out the configuration for Prisma:
