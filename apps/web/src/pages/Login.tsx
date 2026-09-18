@@ -42,7 +42,7 @@ export function Login() {
     return (
         <>
         <h1>ICSF Library Database</h1>
-        <p>O frabjous day! Callooh! Callay! - Please login. If you don't know how, contact the head librarian :)</p>
+        <p className='help'>O frabjous day! Callooh! Callay! - Please login. If you don't know how, contact the head librarian :)</p>
         
         {error && <p role="alert">{error}</p>}
 

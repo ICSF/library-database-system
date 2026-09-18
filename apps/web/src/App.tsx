@@ -2,6 +2,7 @@ import { Link, Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import { useAuth } from './auth/useAuth';
 import { ProtectedRoute } from './auth/ProtectedRoute';
 import { Login } from './pages/Login';
+import { Portal } from './pages/Portal';
 
 import './App.css';
 
@@ -41,16 +42,6 @@ function Layout() {
   );
 }
 
-function PortalHome() {
-  const { session } = useAuth();
-  return (
-    <>
-      <h1>Welcome to the ICSF Library Database</h1>
-      <p>Signed in as {session?.user.email}</p>
-    </>
-  );
-}
-
 // Route table - The /portal branch is nested within its own index route so that
 // future pages become covered under it and by the one ProtectedRoute
 function App() {
@@ -68,7 +59,7 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<PortalHome />} />
+          <Route index element={<Portal />} />
           {/* more protected /portal/* routes go here as the app grows */}
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
