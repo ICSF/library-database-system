@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Navigate, useLocation, useNavigate, type Location } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/useAuth';
 
 interface LocationState {
-    from?: Location;
+    from?: string;
 }
 
 export function Login() {
@@ -15,8 +15,7 @@ export function Login() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
-    const redirectTo = (location.state as LocationState | null)?.from?.pathname ?? '/portal';
-
+    const redirectTo = (location.state as LocationState | null)?.from ?? '/portal';
 
     // if already signed in 
     if (session) {
