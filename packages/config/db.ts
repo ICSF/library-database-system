@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { loadEnv } from './load-env';
+import { loadEnv } from './load-env.js';
 
 loadEnv();
 
