@@ -15,7 +15,6 @@ const corsMiddleware = cors({
 const trpcHandler = createHTTPHandler({
   router: appRouter,
   createContext, // supabase jwt verification per request
-  basePath: '/api/',
   responseMeta(opts) {
     // cache just the public catalogue listing
     const isCatalogueList = opts.info?.calls.every((call) => call.path === 'catalogueList') ?? false;
