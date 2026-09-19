@@ -1,6 +1,7 @@
 import {prisma} from '@library/db';
 import { createClient } from '@supabase/supabase-js';
 import {initTRPC, TRPCError} from '@trpc/server';
+import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 import { env } from '@library/config';
 
 //TODO: move elsewjere
@@ -13,8 +14,8 @@ export type CommitteeAccessRole = 'committee' | 'librarian';
 // frontend sends us. Uses the SERVICE ROLE key - never ship this to a browser.
 const supabaseAdmin = createClient(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY);
 
-export async function createContext(req: Request) {
-  const authHeader = req.headers.get('authorization');
+export async function createContext({ req }: CreateHTTPContextOptions) {
+  const authHeader = req.headers.authorization;
   const token = authHeader?.startsWith('Bearer ')
     ? authHeader.slice('Bearer '.length)
     : undefined;
@@ -24,7 +25,6 @@ export async function createContext(req: Request) {
   }
 
   const { data, error } = await supabaseAdmin.auth.getUser(token);
-
 
   if (error || !data.user) {
     return { user: null };
