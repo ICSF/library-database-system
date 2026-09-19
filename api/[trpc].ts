@@ -9,13 +9,13 @@ const ALLOWED_ORIGINS = ['https://icsf.github.io', 'http://localhost:5173'];
 const corsMiddleware = cors({
   origin: ALLOWED_ORIGINS,
   methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'], // for auth
+  allowedHeaders: ['Content-Type', 'Authorization'], // for auth
 });
 
 const trpcHandler = createHTTPHandler({
   router: appRouter,
+  basePath: '/api/',
   createContext, // supabase jwt verification per request
-  basePath: '/api',
   responseMeta(opts) {
     // cache just the public catalogue listing
     const isCatalogueList = opts.info?.calls.every((call) => call.path === 'catalogueList') ?? false;
