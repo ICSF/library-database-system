@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/[trpc]" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "trailingSlash": false
