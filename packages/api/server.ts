@@ -5,7 +5,7 @@ import {disconnectPrisma} from '@library/db';
 import {createHTTPServer} from '@trpc/server/adapters/standalone';
 import cors from 'cors';
 
-import {appRouter, createContext} from './index';
+import {appRouter, createContext} from './index.js';
 
 const ALLOWED_ORIGINS = ['http://localhost:5173'];
 

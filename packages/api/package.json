@@ -5,6 +5,7 @@
   "main": "index.ts",
   "types": "index.ts",
   "scripts": {
+    "build": "tsc --outDir dist",
     "dev": "tsx watch server.ts",
     "typecheck": "tsc --noEmit"
   },
