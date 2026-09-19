@@ -85,10 +85,20 @@ export const appRouter = t.router({
 
   // who's signed in + committee role + access role
   me: protectedProcedure.query(async ({ ctx }) => {
-    const committeeRow = await prisma.committee.findUnique({
-      where: { user_id: ctx.user.id },
-      select: { access_role: true, role: true },
-    });
+    let committeeRow;
+    try {
+      committeeRow = await prisma.committee.findUnique({
+        where: { user_id: ctx.user.id },
+        select: { access_role: true, role: true },
+      });
+    } catch (err) {
+      console.error('[me] db query failed:', err);
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to load user profile.',
+        cause: err,
+      });
+    }
 
     if (!committeeRow) {
       throw new TRPCError({
