@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { loadEnv } from './load-env.js';
-import { baseEnvSchema } from './db.js';
+import { loadEnv } from './load-env';
+import { baseEnvSchema } from './db';
 
 loadEnv();
 
