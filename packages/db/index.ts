@@ -1,4 +1,4 @@
-import {env} from '@library/config/db';
+import {env} from '@library/config';
 import {PrismaPg} from '@prisma/adapter-pg';
 
 import {PrismaClient} from './generated/prisma/client.js';

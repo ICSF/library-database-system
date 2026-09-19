@@ -1,15 +1,7 @@
 {
   "name": "@library/config",
-  "exports": {
-    ".": {
-      "types": "./index.ts",
-      "default": "./index.ts"
-    },
-    "./db": {
-      "types": "./base.ts",
-      "default": "./base.ts"
-    }
-  },
+  "main": "./index.ts",
+  "types": "./index.ts",
   "version": "1.0.0",
   "private": true,
   "type": "module",
