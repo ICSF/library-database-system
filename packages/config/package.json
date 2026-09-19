@@ -2,12 +2,12 @@
   "name": "@library/config",
   "exports": {
     ".": {
-      "types": "./index.js",
-      "default": "./index.js"
+      "types": "./index.ts",
+      "default": "./index.ts"
     },
     "./db": {
-      "types": "./base.js",
-      "default": "./base.js"
+      "types": "./base.ts",
+      "default": "./base.ts"
     }
   },
   "version": "1.0.0",
