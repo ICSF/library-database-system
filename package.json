@@ -20,8 +20,5 @@
     "@types/cors": "^2.8.19",
     "concurrently": "^10.0.5",
     "typescript": "~6.0.3"
-  },
-  "engines": {
-    "node": ">=22.0.0"
   }
 }
