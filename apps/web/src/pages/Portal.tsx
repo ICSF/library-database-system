@@ -17,7 +17,7 @@ export function Portal() {
       <p className='help'>
         {
           profileLoading ? 'Loading your profile...'
-          : profile?.accessRole === 'librarian' ? 'You are logged in as the Head Librarian. Welcome O Great One.'
+          : profile?.isHead? 'You are logged in as the Head Librarian. Welcome O Great One.'
           : `You are logged in as ${profile?.role}. This allows you to loan or return items and add new members.`
         }
       </p>

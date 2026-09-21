@@ -43,7 +43,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .query()
       .then((result) => {
         if (cancelled) return;
-        setFetchedProfile({ userId, profile: { accessRole: result.accessRole, role: result.role! }});
+        setFetchedProfile({ userId, profile: { 
+          role: result.role!, 
+          isHead: result.isHead}
+        });
       })
       .catch((err) => {
         if (cancelled) return; 

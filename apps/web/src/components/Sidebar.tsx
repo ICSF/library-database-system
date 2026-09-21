@@ -3,8 +3,7 @@ import { useAuth } from '../auth/useAuth';
 
 export function Sidebar() {
     const { profile } = useAuth();
-    const role = profile?.accessRole;
-    const isHead = role === 'librarian';
+    const isHead = profile?.isHead;;
 
     return (
         <aside className="menubar">

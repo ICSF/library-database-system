@@ -25,8 +25,8 @@ model authors {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model committee {
   user_id                            String  @id(map: "staff_access_pkey") @db.Uuid
-  access_role                        String
   role                               String?
+  isHeadLibrarian                    Boolean @default(false)
   loans_loans_issued_byTocommittee   loans[] @relation("loans_issued_byTocommittee")
   loans_loans_returned_byTocommittee loans[] @relation("loans_returned_byTocommittee")
 }

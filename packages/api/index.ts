@@ -7,9 +7,6 @@ import { env } from '@library/config';
 //TODO: move elsewjere
 const HARD_MAX_ROWS = 20000;
 
-// only 2 access roles
-export type CommitteeAccessRole = 'committee' | 'librarian';
-
 // Server-side only Supabase client, used purely to verify tokens the
 // frontend sends us. Uses the SERVICE ROLE key - never ship this to a browser.
 const supabaseAdmin = createClient(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY);
@@ -89,7 +86,7 @@ export const appRouter = t.router({
     try {
       committeeRow = await prisma.committee.findUnique({
         where: { user_id: ctx.user.id },
-        select: { access_role: true, role: true },
+        select: { role: true, isHeadLibrarian: true },
       });
     } catch (err) {
       console.error('[me] db query failed:', err);
@@ -110,7 +107,7 @@ export const appRouter = t.router({
     return {
       id: ctx.user.id,
       email: ctx.user.email,
-      accessRole: committeeRow.access_role as CommitteeAccessRole,
+      isHead: committeeRow.isHeadLibrarian,
       role: committeeRow.role,
     };
   }),

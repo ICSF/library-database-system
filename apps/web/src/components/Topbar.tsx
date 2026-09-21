@@ -8,9 +8,7 @@ const LATEST_YEAR = CURRENT_YEAR;
 
 export function Topbar() {
   const { profile, signOut } = useAuth();
-  const role = profile?.role ?? '';
-  // TODO: abstract this functionality
-  const isHead = role === 'librarian';
+  const isHead = profile?.isHead;
 
   const [currentYear, setCurrentYear] = useState<number>(CURRENT_YEAR);
   const [pendingYear, setPendingYear] = useState<number>(CURRENT_YEAR);
