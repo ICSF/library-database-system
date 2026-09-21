@@ -2,10 +2,15 @@
 // authors: Michelle Osmond and Michael Wright
 // 'feel the randomness'
 
+import { useState } from 'react';
 import { useAuth } from '../auth/useAuth';
 
 export function Portal() {
   const { profile, profileLoading } = useAuth();
+  const [notice, setNotice] = useState(
+    'TODO: allow the content of this textarea to persist.'
+  );
+
   return (
     <>
       <h1>Welcome to the ICSF Library Database</h1>
@@ -25,9 +30,13 @@ export function Portal() {
 
       <div className="notice">
         <h4>Notices from the Librarian(s)</h4>
-        <textarea id="notice" name="Notice" rows={20} cols={97}>
-          {/* TODO: allow the content of this textarea to persist. */}
-        </textarea>
+        <textarea
+          id="notice"
+          name="Notice"
+          rows={20}
+          value={notice}
+          onChange={(e) => setNotice(e.target.value)}
+        />
       </div>
       <br/>
     </>

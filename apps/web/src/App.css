@@ -5,7 +5,7 @@ html {
 }
 body {
     position: relative;		/* Make containing block for the menus */
-    padding: 0.7em 1em 1em 13em;	/* Room for menu on the left */
+    padding: 1em 1em 1em 1em;	/* Room for menu on the left */
     margin: 0;
     background-color : #55708d;
     font-family: sans-serif;
@@ -55,7 +55,7 @@ p {
 }
 
 /* black border */
-.main, .menubar table, .topbar {
+.menubar table, .topbar {
     border: thin solid black;
 }
 
@@ -183,7 +183,7 @@ div.menubar {
 }
 
 div.menubar, .menubar table {
-    width: 11em; 
+    width: 14em; 
 }
 
 .menubar table {
@@ -489,8 +489,14 @@ textarea.readonly {
 div.notice {
     background-color : #E4F1F8;
     border : #c8ddf0 dotted 2px;
-    margin : 10px 350px 10px 10px;
+    margin : 10px;
     padding : 5px 10px 10px 10px;
+}
+
+div.notice textarea {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 div.notice h4 {
@@ -585,7 +591,7 @@ div#similarItemsBox .item .status {
 
 .site-layout {
     display: grid;
-    grid-template-columns: 11em minmax(0, 1fr);
+    grid-template-columns: 14em minmax(0, 1fr);
     gap: 1rem;
     min-height: calc(100vh - 60px);
     padding: 0 1rem 1rem;

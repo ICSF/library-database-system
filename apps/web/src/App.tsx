@@ -5,9 +5,10 @@ import { Login } from './pages/Login';
 import { Portal } from './pages/Portal';
 
 import './App.css';
+import {PortalLayout} from './layouts/PortalLayout';
 
 function Layout() {
-  const { session, signOut } = useAuth();
+  const { session } = useAuth();
 
   return (
     <div className="site-shell">
@@ -18,26 +19,21 @@ function Layout() {
         <span className="tagline">Imperial Sci-fi Fantasy Society</span>
       </header>
 
-      <div className="site-layout">
-        <aside className="menubar">
-          <nav aria-label="Main navigation">
-            {session ? (
-              <>
-                <Link to="/portal">Committee portal</Link>
-                <button type="button" onClick={() => void signOut()}>
-                  Log out
-                </button>
-              </>
-            ) : (
+      {session ? (
+        <Outlet />
+      ) : (
+        <div className="site-layout">
+          <aside className="menubar">
+            <nav aria-label="Main navigation">
               <Link to="/login">Log in</Link>
-            )}
-          </nav>
-        </aside>
+            </nav>
+          </aside>
 
-        <main className="main-content">
-          <Outlet />
-        </main>
-      </div>
+          <main className="main-content">
+            <Outlet />
+          </main>
+        </div>
+      )}
     </div>
   );
 }
@@ -55,7 +51,7 @@ function App() {
           path="portal"
           element={
             <ProtectedRoute>
-              <Outlet />
+              <PortalLayout />
             </ProtectedRoute>
           }
         >
