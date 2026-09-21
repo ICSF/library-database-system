@@ -25,7 +25,7 @@ jobs:
 
       - name: Create pg_dump
         env:
-          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}   # direct connection, port 5432
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}   # direct/session pooler connection, port 5432
         run: |
           set -euo pipefail
           TIMESTAMP=$(date +'%Y-%m-%d_%H-%M-%S')
@@ -74,7 +74,7 @@ jobs:
           SIZE=$(rclone size "$REMOTE_PATH" --json | jq -r '.bytes')
 
           if [ -z "$SIZE" ] || [ "$SIZE" -lt 10000 ]; then
-            echo "::error::Uploaded backup is missing or suspiciously small ($SIZE bytes) at $REMOTE_PATH — skipping cleanup so older backups are NOT deleted."
+            echo "::error::Uploaded backup is missing or suspiciously small ($SIZE bytes) at $REMOTE_PATH - skipping cleanup so older backups are not deleted."
             exit 1
           fi
 
