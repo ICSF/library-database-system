@@ -44,7 +44,7 @@ export function Sidebar() {
                     {/* Edit Members */}
                     <tr>
                         <td>
-                            <Link to="/portal/members/search">Edit Members</Link>
+                            <Link to="/portal/members/search">All Members / Edit Members</Link>
                         </td>
                     </tr>
                     {/* Search Catalogue */}

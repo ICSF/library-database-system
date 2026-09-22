@@ -48,6 +48,7 @@ export function AddMember() {
         Be wild, be free with the comments sections - general comments persist throughout the years, 
         and year-specific comments are only for this membership year
       </p>
+      {/* TODO: better error messages everywhere for reason why unable to add */}
       {submissionStatus === 'success' && <p className="info">Member added successfully.</p>}
       {submissionStatus === 'error' && <p className="error">Unable to add member.</p>}
       <MemberForm
