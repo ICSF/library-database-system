@@ -69,6 +69,7 @@ export function Topbar() {
           </tr>
         </tbody>
       </table>
+      <br/>
     </div>
   );
 }

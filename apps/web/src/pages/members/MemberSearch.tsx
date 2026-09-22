@@ -69,6 +69,11 @@ export function MemberSearch() {
   return (
     <>
       <h1>Edit Members</h1>
+      <p className="help">
+        Here, you can filter for current/all members, and also search for specific members.<br/>
+        The status of a member can be Current, Past, or Disabled <br/>
+        Click 'Edit/Renew' to edit member details, or to renew them for the new academic year.
+      </p>
 
       <form>
         <table>
@@ -96,6 +101,7 @@ export function MemberSearch() {
                 <input
                   id="member-search"
                   type="search"
+                  size="25"
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="First name, last name, or email"
@@ -105,11 +111,12 @@ export function MemberSearch() {
           </tbody>
         </table>
       </form>
+      <br/>
 
       {loading && <p className="help">Loading members...</p>}
       {error && <p className="error">Unable to load members.</p>}
 
-      <table className="list" width="100%">
+      <table className="list" width="99%">
         <thead>
           <tr className="bg1">
             <th>Name</th>
@@ -125,8 +132,7 @@ export function MemberSearch() {
               <td>{member.email ?? ''}</td>
               <td>{member.status}</td>
               <td>
-                <Link to={`/portal/members/edit/${member.member_id}`}>Edit</Link>{' '}
-                <Link to={`/portal/members/edit/${member.member_id}?renew=true`}>Renew</Link>
+                <Link to={`/portal/members/edit/${member.member_id}`}>Edit/Renew</Link>
               </td>
             </tr>
           ))}

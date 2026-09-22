@@ -23,7 +23,7 @@ export function Portal() {
       </p>
 
       {/* Show some basic statistics for general interest and education */}
-      <p className='info'><b>Library Statistics:</b><br></br>
+      <p className='info'><b>Library Statistics:</b><br/>
          {/* TODO: member count */}
           Member count: 
       </p>

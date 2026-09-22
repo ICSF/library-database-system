@@ -1,37 +1,126 @@
-import { useState } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
-import { MemberForm } from './MemberForm';
+import { useEffect, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { trpc } from '../../lib/TRPC';
+import { MemberForm, type MemberFormValues } from './MemberForm';
+import { invalidateMemberFormOptions } from './useMemberFormOptions';
 
 export function EditMember() {
   const { memberId } = useParams();
-  const location = useLocation();
-  const [renewed, setRenewed] = useState(false);
-  const [saveAttempted, setSaveAttempted] = useState(false);
+  const [member, setMember] = useState<MemberFormValues | null>(null);
+  const [formVersion, setFormVersion] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+  const [renewStatus, setRenewStatus] = useState<'idle' | 'renewing' | 'success' | 'already_current' | 'error'>('idle');
 
-  const renewRequested = new URLSearchParams(location.search).get('renew') === 'true';
+  useEffect(() => {
+    let isCurrent = true;
 
-  function handleRenew() {
-    setRenewed(true);
+    async function loadMember() {
+      if (!memberId) {
+        setLoadError(true);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const record = await trpc.memberById.query({ member_id: memberId });
+        if (isCurrent) {
+          setMember(record);
+        }
+      } catch (error) {
+        console.error('Failed to load member:', error);
+        if (isCurrent) {
+          setLoadError(true);
+        }
+      } finally {
+        if (isCurrent) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadMember();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [memberId]);
+
+  async function handleRenew(values: MemberFormValues) {
+    if (!memberId) {
+      setRenewStatus('error');
+      return;
+    }
+
+    setRenewStatus('renewing');
+
+    try {
+      const result = await trpc.renewMember.mutate({
+        member_id: memberId,
+        notes: values.year_comments,
+      });
+      setRenewStatus(result.status);
+    } catch (error) {
+      console.error('Failed to renew member:', error);
+      setRenewStatus('error');
+    }
   }
 
-  function handleSave(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setSaveAttempted(true);
+  async function handleSave(values: MemberFormValues) {
+    if (!memberId) {
+      setSaveStatus('error');
+      return;
+    }
+
+    setSaveStatus('saving');
+
+    try {
+      await trpc.updateMember.mutate({
+        member_id: memberId,
+        ...values,
+      });
+      // The shared form uses default values, so refetch and remount it after
+      // saving to show the database state rather than stale initial values.
+      const refreshedMember = await trpc.memberById.query({ member_id: memberId });
+      setMember(refreshedMember);
+      setFormVersion((version) => version + 1);
+      invalidateMemberFormOptions();
+      setSaveStatus('success');
+      return true;
+    } catch (error) {
+      console.error('Failed to update member:', error);
+      setSaveStatus('error');
+      return false;
+    }
   }
 
   return (
     <>
       <h1>Edit Member</h1>
-      <p className="help">Member ID: {memberId}</p>
-      {renewRequested && <p className="info">Renewal selected. Saving is not connected yet.</p>}
-      {renewed && <p className="info">Renewal prepared. Saving is not connected yet.</p>}
-      {saveAttempted && <p className="info">Saving is not connected yet.</p>}
-      <MemberForm
-        onSubmit={handleSave}
-        submitLabel="Save changes"
-        showDisableFields
-        onRenew={handleRenew}
-      />
+      <p className="help">
+        Here, you can edit member details. Disabling a member means that they are banned from borrowing books, for whatever reason. <br/>
+      </p>
+      {renewStatus === 'success' && member && <p className="info">{member.first_name} {member.last_name} renewed successfully.</p>}
+      {renewStatus === 'already_current' && member && (
+        <p className="info">{member.first_name} {member.last_name} is already a member this year.</p>
+      )}
+      {renewStatus === 'error' && <p className="error">Unable to renew member.</p>}
+      {loading && <p className="help">Loading member...</p>}
+      {loadError && <p className="error">Unable to load member.</p>}
+      {saveStatus === 'success' && <p className="info">Member updated successfully.</p>}
+      {saveStatus === 'error' && <p className="error">Unable to update member.</p>}
+      {!loading && !loadError && member && (
+        <MemberForm
+          key={`${member.member_id}-${formVersion}`}
+          initialValues={member}
+          onSubmit={handleSave}
+          submitLabel={saveStatus === 'saving' ? 'Saving changes...' : 'Save changes'}
+          submitting={saveStatus === 'saving'}
+          showDisableFields
+          onRenew={handleRenew}
+        />
+      )}
       <p><Link to="/portal/members/search">Cancel</Link></p>
     </>
   );

@@ -1,53 +1,60 @@
 import { useState } from 'react';
 import { trpc } from '../../lib/TRPC';
-import { MemberForm } from './MemberForm';
+import { MemberForm, type MemberFormValues } from './MemberForm';
+import { invalidateMemberFormOptions } from './useMemberFormOptions';
 
 export function AddMember() {
   const [submissionStatus, setSubmissionStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleSubmit(values: MemberFormValues) {
     setSubmissionStatus('submitting');
 
-    const form = event.currentTarget;
-    const formData = new FormData(form);
-    const optionalNumber = (name: string) => {
-      const value = formData.get(name)?.toString() ?? '';
-      return value ? Number(value) : null;
-    };
-    const optionalText = (name: string) => {
-      const value = formData.get(name)?.toString().trim() ?? '';
-      return value || null;
-    };
-
     try {
+      const {
+        first_name,
+        last_name,
+        member_type_id,
+        dept_id,
+        uni_year,
+        email,
+        comments,
+        year_comments,
+      } = values;
       await trpc.addMember.mutate({
-        first_name: formData.get('first_name')?.toString().trim() ?? '',
-        last_name: formData.get('last_name')?.toString().trim() ?? '',
-        member_type_id: optionalNumber('member_type_id'),
-        dept_id: optionalNumber('dept_id'),
-        uni_year: optionalText('uni_year'),
-        email: formData.get('email')?.toString().trim() ?? '',
-        comments: optionalText('comments'),
-        year_comments: optionalText('year_comments'),
+        first_name,
+        last_name,
+        member_type_id,
+        dept_id,
+        uni_year,
+        email,
+        comments,
+        year_comments,
       });
-      form.reset();
+      invalidateMemberFormOptions();
       setSubmissionStatus('success');
+      return true;
     } catch (error) {
       console.error('Failed to add member:', error);
       setSubmissionStatus('error');
+      return false;
     }
   }
 
   return (
     <>
       <h1>Add New Member</h1>
+      <p className='help'>
+        Here, you can add new members. The first name, last name and email fields are compulsory <br/>
+        Be wild, be free with the comments sections - general comments persist throughout the years, 
+        and year-specific comments are only for this membership year
+      </p>
       {submissionStatus === 'success' && <p className="info">Member added successfully.</p>}
       {submissionStatus === 'error' && <p className="error">Unable to add member.</p>}
       <MemberForm
         onSubmit={handleSubmit}
         submitLabel={submissionStatus === 'submitting' ? 'Adding member...' : 'Add member'}
         submitting={submissionStatus === 'submitting'}
+        resetOnSubmit
       />
     </>
   );
