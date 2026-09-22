@@ -402,7 +402,7 @@ export const appRouter = t.router({
             },
           });
 
-          return { status: 'renewed' as const, name };
+          return { status: 'success' as const, name };
         });
       } catch (err) {
         if (err instanceof TRPCError) {

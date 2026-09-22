@@ -70,7 +70,7 @@ export function EditMember() {
   async function handleSave(values: MemberFormValues) {
     if (!memberId) {
       setSaveStatus('error');
-      return;
+      return false;
     }
 
     setSaveStatus('saving');
@@ -112,7 +112,7 @@ export function EditMember() {
       {saveStatus === 'error' && <p className="error">Unable to update member.</p>}
       {!loading && !loadError && member && (
         <MemberForm
-          key={`${member.member_id}-${formVersion}`}
+          key={formVersion}
           initialValues={member}
           onSubmit={handleSave}
           submitLabel={saveStatus === 'saving' ? 'Saving changes...' : 'Save changes'}

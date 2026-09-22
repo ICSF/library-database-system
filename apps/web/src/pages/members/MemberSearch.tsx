@@ -101,7 +101,7 @@ export function MemberSearch() {
                 <input
                   id="member-search"
                   type="search"
-                  size="25"
+                  size={25}
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="First name, last name, or email"
