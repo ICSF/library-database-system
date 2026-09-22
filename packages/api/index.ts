@@ -112,6 +112,39 @@ export const appRouter = t.router({
     };
   }),
 
+  memberFormOptions: protectedProcedure.query(async () => {
+    try {
+      const [memberTypes, departments] = await Promise.all([
+        prisma.member_types.findMany({
+          select: { member_type_id: true, member_type: true },
+          orderBy: { member_type_id: 'asc' },
+        }),
+        prisma.departments.findMany({
+          select: { department_id: true, name: true },
+          orderBy: { name: 'asc' },
+        }),
+      ]);
+
+      return {
+        memberTypes: memberTypes.map(({ member_type_id, member_type }) => ({
+          id: member_type_id,
+          name: member_type,
+        })),
+        departments: departments.map(({ department_id, name }) => ({
+          id: department_id,
+          name,
+        })),
+      };
+    } catch (err) {
+      console.error('[memberFormOptions] db query failed:', err);
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to load member form options.',
+        cause: err,
+      });
+    }
+  }),
+
 });
 
 export type AppRouter = typeof appRouter;
