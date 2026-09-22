@@ -1,102 +1,61 @@
-type MemberOption = {
-  id: number;
-  name: string;
-};
-
-const memberTypeOptions: MemberOption[] = [];
-const departmentOptions: MemberOption[] = [];
+import { useState } from 'react';
+import { trpc } from '../../lib/TRPC';
+import { MemberForm, type MemberFormValues } from './MemberForm';
+import { invalidateMemberFormOptions } from './useMemberFormOptions';
 
 export function AddMember() {
+  const [submissionStatus, setSubmissionStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+
+  async function handleSubmit(values: MemberFormValues) {
+    setSubmissionStatus('submitting');
+
+    try {
+      const {
+        first_name,
+        last_name,
+        member_type_id,
+        dept_id,
+        uni_year,
+        email,
+        comments,
+        year_comments,
+      } = values;
+      await trpc.addMember.mutate({
+        first_name,
+        last_name,
+        member_type_id,
+        dept_id,
+        uni_year,
+        email,
+        comments,
+        year_comments,
+      });
+      invalidateMemberFormOptions();
+      setSubmissionStatus('success');
+      return true;
+    } catch (error) {
+      console.error('Failed to add member:', error);
+      setSubmissionStatus('error');
+      return false;
+    }
+  }
+
   return (
     <>
       <h1>Add New Member</h1>
-
-      <form>
-        <table>
-          <tbody>
-            <tr>
-              <td className="required">
-                <label htmlFor="first-name">First name</label>
-              </td>
-              <td>
-                <input id="first-name" name="first_name" type="text" required />
-              </td>
-            </tr>
-            <tr>
-              <td className="required">
-                <label htmlFor="last-name">Last name</label>
-              </td>
-              <td>
-                <input id="last-name" name="last_name" type="text" required />
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <label htmlFor="member-type">Member type</label>
-              </td>
-              <td>
-                <select id="member-type" name="member_type_id" defaultValue="">
-                  <option value="" disabled>
-                    Select a member type
-                  </option>
-                  {memberTypeOptions.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.name} ({option.id})
-                    </option>
-                  ))}
-                </select>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <label htmlFor="department">Course</label>
-              </td>
-              <td>
-                <select id="department" name="dept_id" defaultValue="">
-                  <option value="" disabled>
-                    Select a course
-                  </option>
-                  {departmentOptions.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.name} ({option.id})
-                    </option>
-                  ))}
-                </select>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <label htmlFor="uni-year">University year</label>
-              </td>
-              <td>
-                <input id="uni-year" name="uni_year" type="text" />
-              </td>
-            </tr>
-            <tr>
-              <td className="required">
-                <label htmlFor="email">Email</label>
-              </td>
-              <td>
-                <input id="email" name="email" type="email" required />
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <label htmlFor="comments">Comments</label>
-              </td>
-              <td>
-                <textarea id="comments" name="comments" rows={5} />
-              </td>
-            </tr>
-            <tr>
-              <td />
-              <td>
-                <button type="submit">Add member</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </form>
+      <p className='help'>
+        Here, you can add new members. The first name, last name and email fields are compulsory <br/>
+        Be wild, be free with the comments sections - general comments persist throughout the years, 
+        and year-specific comments are only for this membership year
+      </p>
+      {submissionStatus === 'success' && <p className="info">Member added successfully.</p>}
+      {submissionStatus === 'error' && <p className="error">Unable to add member.</p>}
+      <MemberForm
+        onSubmit={handleSubmit}
+        submitLabel={submissionStatus === 'submitting' ? 'Adding member...' : 'Add member'}
+        submitting={submissionStatus === 'submitting'}
+        resetOnSubmit
+      />
     </>
   );
 }

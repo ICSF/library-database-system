@@ -4,6 +4,8 @@ import { ProtectedRoute } from './auth/ProtectedRoute';
 import { Login } from './pages/Login';
 import { Portal } from './pages/Portal';
 import { AddMember } from './pages/members/AddMember';
+import { EditMember } from './pages/members/EditMember';
+import { MemberSearch } from './pages/members/MemberSearch';
 
 import './App.css';
 import {PortalLayout} from './layouts/PortalLayout';
@@ -58,6 +60,8 @@ function App() {
         >
           <Route index element={<Portal />} />
           <Route path="members/add" element={<AddMember />} />
+          <Route path="members/search" element={<MemberSearch />} />
+          <Route path="members/edit/:memberId" element={<EditMember />} />
           {/* more protected /portal/* routes go here as the app grows */}
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

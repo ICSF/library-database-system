@@ -152,7 +152,7 @@ model members {
   member_type_id     Int?
   dept_id            Int?
   uni_year           String?
-  email              String?              @unique
+  email              String               @unique
   comments           String?
   join_date          DateTime?            @db.Date
   is_disabled        Boolean              @default(false)
