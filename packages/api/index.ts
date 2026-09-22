@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import {initTRPC, TRPCError} from '@trpc/server';
 import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 import { env } from '@library/config';
+import { z } from 'zod';
 
 //TODO: move elsewjere
 const HARD_MAX_ROWS = 20000;
@@ -112,6 +113,7 @@ export const appRouter = t.router({
     };
   }),
 
+  // returns info from departments table and member types table for members form
   memberFormOptions: protectedProcedure.query(async () => {
     try {
       const [memberTypes, departments] = await Promise.all([
@@ -144,6 +146,67 @@ export const appRouter = t.router({
       });
     }
   }),
+
+  // insert operation to add new member
+  addMember: protectedProcedure
+    .input(
+      z.object({
+        first_name: z.string().trim().min(1),
+        last_name: z.string().trim().min(1),
+        member_type_id: z.number().int().positive().nullable(),
+        dept_id: z.number().int().positive().nullable(),
+        uni_year: z.string().trim().nullable(),
+        email: z.email().trim(),
+        comments: z.string().trim().nullable(),
+        year_comments: z.string().trim().nullable(),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      try {
+        const member = await prisma.$transaction(async (transaction) => {
+          const membershipSettings = await transaction.membership_settings.findUnique({
+            where: { singleton: true },
+            select: { current_membership_year: true },
+          });
+
+          if (!membershipSettings) {
+            throw new Error('Current membership year is not configured.');
+          }
+
+          const createdMember = await transaction.members.create({
+            data: {
+              first_name: input.first_name,
+              last_name: input.last_name,
+              member_type_id: input.member_type_id,
+              dept_id: input.dept_id,
+              uni_year: input.uni_year,
+              email: input.email,
+              comments: input.comments,
+              join_date: new Date(),
+            },
+          });
+
+          await transaction.member_memberships.create({
+            data: {
+              member_id: createdMember.member_id,
+              membership_year: membershipSettings.current_membership_year,
+              notes: input.year_comments,
+            },
+          });
+
+          return createdMember;
+        });
+
+        return { member_id: member.member_id };
+      } catch (err) {
+        console.error('[addMember] db mutation failed:', err);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to add member.',
+          cause: err,
+        });
+      }
+    }),
 
 });
 
