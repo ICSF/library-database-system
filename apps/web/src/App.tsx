@@ -3,6 +3,7 @@ import { useAuth } from './auth/useAuth';
 import { ProtectedRoute } from './auth/ProtectedRoute';
 import { Login } from './pages/Login';
 import { Portal } from './pages/Portal';
+import { AddMember } from './pages/members/AddMember';
 
 import './App.css';
 import {PortalLayout} from './layouts/PortalLayout';
@@ -56,6 +57,7 @@ function App() {
           }
         >
           <Route index element={<Portal />} />
+          <Route path="members/add" element={<AddMember />} />
           {/* more protected /portal/* routes go here as the app grows */}
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
