@@ -147,6 +147,78 @@ export const appRouter = t.router({
     }
   }),
 
+  // list of all members - takes from current_members view if user wants current members, otherwise
+  // takes from the whole members table
+  memberList: protectedProcedure
+    .input(z.object({ scope: z.enum(['current', 'all']) }))
+    .query(async ({ input }) => {
+      try {
+        if (input.scope === 'current') {
+          const members = await prisma.current_members.findMany({
+            select: {
+              member_id: true,
+              first_name: true,
+              last_name: true,
+              email: true,
+              is_disabled: true,
+            },
+            orderBy: [{ last_name: 'asc' }, { first_name: 'asc' }],
+          });
+
+          return members
+            .filter((member): member is typeof member & { member_id: string } => member.member_id !== null)
+            .map((member) => ({
+              member_id: member.member_id,
+              first_name: member.first_name,
+              last_name: member.last_name,
+              email: member.email,
+              status: 'Current' as const,
+            }));
+        }
+
+        const [members, currentMembers] = await Promise.all([
+          prisma.members.findMany({
+            select: {
+              member_id: true,
+              first_name: true,
+              last_name: true,
+              email: true,
+              is_disabled: true,
+            },
+            orderBy: [{ last_name: 'asc' }, { first_name: 'asc' }],
+          }),
+          prisma.current_members.findMany({
+            select: { member_id: true },
+          }),
+        ]);
+
+        const currentMemberIds = new Set(
+          currentMembers
+            .map((member) => member.member_id)
+            .filter((memberId): memberId is string => memberId !== null),
+        );
+
+        return members.map((member) => ({
+          member_id: member.member_id,
+          first_name: member.first_name,
+          last_name: member.last_name,
+          email: member.email,
+          status: member.is_disabled
+            ? 'Disabled' as const
+            : currentMemberIds.has(member.member_id)
+              ? 'Current' as const
+              : 'Past' as const,
+        }));
+      } catch (err) {
+        console.error('[memberList] db query failed:', err);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to load members.',
+          cause: err,
+        });
+      }
+    }),
+
   // insert operation to add new member
   addMember: protectedProcedure
     .input(
