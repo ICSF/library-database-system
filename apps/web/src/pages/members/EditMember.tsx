@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { TRPCClientError } from '@trpc/client';
 import { trpc } from '../../lib/TRPC';
 import { MemberForm, type MemberFormValues } from './MemberForm';
 
@@ -12,6 +13,8 @@ export function EditMember() {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [renewStatus, setRenewStatus] = useState<'idle' | 'renewing' | 'success' | 'already_current' | 'error'>('idle');
   const [yearCommentsWarning, setYearCommentsWarning] = useState<string | null>(null);
+  const [saveErrorMessage, setSaveErrorMessage] = useState<string | null>(null);
+  const [renewErrorMessage, setRenewErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let isCurrent = true;
@@ -54,6 +57,7 @@ export function EditMember() {
     }
 
     setRenewStatus('renewing');
+    setRenewErrorMessage(null);
     setYearCommentsWarning(null);
 
     try {
@@ -68,6 +72,9 @@ export function EditMember() {
     } catch (error) {
       console.error('Failed to renew member:', error);
       setRenewStatus('error');
+      setRenewErrorMessage(
+        error instanceof TRPCClientError ? error.message : 'Unable to renew member.',
+      );
     }
   }
 
@@ -79,6 +86,7 @@ export function EditMember() {
 
     setSaveStatus('saving');
     setYearCommentsWarning(null);
+    setSaveErrorMessage(null);
 
     try {
       const result = await trpc.updateMember.mutate({
@@ -101,6 +109,9 @@ export function EditMember() {
     } catch (error) {
       console.error('Failed to update member:', error);
       setSaveStatus('error');
+      setSaveErrorMessage(
+        error instanceof TRPCClientError ? error.message : 'Unable to update member.',
+      );
       return false;
     }
   }
@@ -115,12 +126,12 @@ export function EditMember() {
       {renewStatus === 'already_current' && member && (
         <p className="error">{member.first_name} {member.last_name} is already a member this year.</p>
       )}
-      {renewStatus === 'error' && <p className="error">Unable to renew member.</p>}
+      {renewStatus === 'error' && <p className="error">{renewErrorMessage}</p>}
       {loading && <p className="help">Loading member...</p>}
       {loadError && <p className="error">Unable to load member.</p>}
       {saveStatus === 'success' && <p className="info">Member updated successfully.</p>}
       {saveStatus === 'success' && yearCommentsWarning && <p className="error">{yearCommentsWarning}</p>}
-      {saveStatus === 'error' && <p className="error">Unable to update member.</p>}
+      {saveStatus === 'error' && <p className="error">{saveErrorMessage}</p>}
       {!loading && !loadError && member && (
         <MemberForm
           key={formVersion}

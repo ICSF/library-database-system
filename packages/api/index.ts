@@ -63,6 +63,7 @@ async function getCurrentMembershipYear(client: Pick<PrismaClient, 'membership_s
 }
 
 export const appRouter = t.router({
+  /* PUBLIC PROCEDURES */
   // Catalogue List endpoint: returns a list of catalogue items, from the catalogue_search view
   catalogueList: publicProcedure.query(async () => {
     try {
@@ -92,6 +93,9 @@ export const appRouter = t.router({
     }
   }),
 
+  /* PROTECTED PROCEDURES */
+
+  /* AUTH */
   // who's signed in + committee role + access role
   me: protectedProcedure.query(async ({ ctx }) => {
     let committeeRow;
@@ -124,6 +128,7 @@ export const appRouter = t.router({
     };
   }),
 
+  /* MEMBERS */
   // returns info from departments table and member types table for members form
   memberFormOptions: protectedProcedure.query(async () => {
     try {
@@ -149,6 +154,10 @@ export const appRouter = t.router({
         })),
       };
     } catch (err) {
+      if (err instanceof TRPCError) {
+          throw err;
+        }
+
       console.error('[memberFormOptions] db query failed:', err);
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
@@ -222,6 +231,10 @@ export const appRouter = t.router({
               : 'Past' as const,
         }));
       } catch (err) {
+        if (err instanceof TRPCError) {
+          throw err;
+        }
+
         console.error('[memberList] db query failed:', err);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
@@ -231,6 +244,7 @@ export const appRouter = t.router({
       }
     }),
 
+  // get member from id
   memberById: protectedProcedure
     .input(z.object({ member_id: z.uuid() }))
     .query(async ({ input }) => {
@@ -376,6 +390,19 @@ export const appRouter = t.router({
           };
         });
       } catch (err) {
+        if (err instanceof TRPCError) {
+          throw err;
+        }
+
+        // uniqueness constraint on email error
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+          throw new TRPCError({
+            code: 'CONFLICT',
+            message: `A member with the email "${input.email}" already exists.`,
+            cause: err,
+          });
+        }
+
         console.error('[updateMember] db mutation failed:', err);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
@@ -529,6 +556,19 @@ export const appRouter = t.router({
 
         return { member_id: member.member_id };
       } catch (err) {
+        if (err instanceof TRPCError) {
+          throw err;
+        }
+
+        // email uniqueness constraint error
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+          throw new TRPCError({
+            code: 'CONFLICT',
+            message: `A member with the email "${input.email}" already exists.`,
+            cause: err,
+          });
+        }
+
         console.error('[addMember] db mutation failed:', err);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
