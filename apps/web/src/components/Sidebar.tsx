@@ -16,7 +16,6 @@ export function Sidebar() {
                   />
                 </Link>
             </div>
-
             {/* DUTY LIBRARIAN LINKS */}
             <table>
                 <thead>
@@ -80,7 +79,6 @@ export function Sidebar() {
                 </tbody>
             </table>
             <br />
-
             {/* HEAD LIBRARIAN LINKS */}
             {isHead && (
                 <>
@@ -91,7 +89,8 @@ export function Sidebar() {
                             </tr>
                         </thead>
                         <tbody>
-                            {/* Add Item */} {/* TODO: why is the first letter in u*/}
+                            {/* Add Item */} 
+                            {/* TODO: why is the first letter in u*/}
                             <tr>
                                 <td>
                                   <Link to="/portal/items/add" accessKey="a">
@@ -145,7 +144,6 @@ export function Sidebar() {
                     <br />
                 </>
             )}
-
             {/* REPORTS LINKS */}
             <table>
                 <thead>
@@ -195,7 +193,6 @@ export function Sidebar() {
                       </ul>
                     </td>
                   </tr>
-                    
                   {isHead && (
                     <tr>
                       <td>
@@ -208,7 +205,6 @@ export function Sidebar() {
                       </td>
                     </tr>
                   )}
-          
                   <tr>
                     <td>
                       <span className="submenu">Members</span>
@@ -224,8 +220,7 @@ export function Sidebar() {
                         </li>
                       </ul>
                     </td>
-                  </tr>
-              
+                  </tr>     
                   <tr>
                     <td>
                       <span className="submenu">Statistics</span>
@@ -257,7 +252,6 @@ export function Sidebar() {
                 </tbody>
             </table>
             <br />
-
             {/* DATABASE ADMIN */}
             {isHead && (
             <>
@@ -296,7 +290,6 @@ export function Sidebar() {
                 </tbody>
               </table>
               <br />
-
               <table>
                 <thead>
                   <tr>
@@ -306,7 +299,7 @@ export function Sidebar() {
                 <tbody>
                   <tr>
                     <td>
-                      <Link to="/portal/admin/config">Installation/Config</Link>...
+                      <Link to="/portal/admin/config">Installation/Config</Link>
                     </td>
                   </tr>
                   <tr>
@@ -330,7 +323,6 @@ export function Sidebar() {
                 <br />
                 </>
             )}
-
             {/* OTHER RELEVANT ICSF LINKS */}
             <table>
                 <thead>
@@ -353,8 +345,6 @@ export function Sidebar() {
                 </tbody>
             </table>
             <br />
-
-
         </aside>
     )
 }
