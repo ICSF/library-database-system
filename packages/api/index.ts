@@ -5,9 +5,6 @@ import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone'
 import { env } from '@library/config';
 import { z } from 'zod';
 
-//TODO: move elsewjere
-const HARD_MAX_ROWS = 20000;
-
 // Server-side only Supabase client, used purely to verify tokens the
 // frontend sends us. Uses the SERVICE ROLE key - never ship this to a browser.
 const supabaseAdmin = createClient(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY);
@@ -83,7 +80,6 @@ export const appRouter = t.router({
           { series_num: 'asc' },
           { title: 'asc' },
         ],
-        take: HARD_MAX_ROWS,
       });
       return rows;
     } catch (err) {
