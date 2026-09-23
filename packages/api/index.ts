@@ -1,4 +1,4 @@
-import {prisma, type PrismaClient} from '@library/db';
+import {prisma, Prisma, type PrismaClient} from '@library/db';
 import { createClient } from '@supabase/supabase-js';
 import {initTRPC, TRPCError} from '@trpc/server';
 import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
@@ -311,7 +311,11 @@ export const appRouter = t.router({
         year_comments: z.string().trim().nullable(),
         is_disabled: z.boolean(),
         disabled_reason: z.string().trim().nullable(),
-      }),
+      })
+      .refine(
+        (v) => !v.is_disabled || (v.disabled_reason && v.disabled_reason.length > 0),
+        { message: 'A reason is required when disabling a member.', path: ['disabled_reason'] },
+      ),
     )
     .mutation(async ({ input }) => {
       try {
@@ -393,9 +397,10 @@ export const appRouter = t.router({
     )
     .mutation(async ({ input }) => {
       try {
-        return await prisma.$transaction(async (transaction) => {
+        const { name, currentMembershipYear } = await prisma.$transaction(async (transaction) => {
           const currentMembershipYear = await getCurrentMembershipYear(transaction);
 
+          // check member existence explicitly first
           const existingMember = await transaction.members.findUnique({
             where: { member_id: input.member_id },
             select: { member_id: true },
@@ -424,30 +429,40 @@ export const appRouter = t.router({
             select: { first_name: true, last_name: true },
           });
 
-          const name = `${member.first_name} ${member.last_name}`;
+          return {
+            name: `${member.first_name} ${member.last_name}`,
+            currentMembershipYear,
+          };
+        });
 
-          const { count } = await transaction.member_memberships.updateMany({
-            where: {
-              member_id: input.member_id,
-              membership_year: currentMembershipYear,
-            },
-            data: { notes: input.year_comments },
-          });
-
-          if (count > 0) {
-            return { status: 'already_current' as const, name };
-          }
-
-          await transaction.member_memberships.create({
+        // create membership row
+        try {
+          await prisma.member_memberships.create({
             data: {
               member_id: input.member_id,
               membership_year: currentMembershipYear,
               notes: input.year_comments,
             },
           });
-
           return { status: 'success' as const, name };
-        });
+        } catch (createErr) {
+          const rowAlreadyExists =
+            createErr instanceof Prisma.PrismaClientKnownRequestError && createErr.code === 'P2002';
+
+          if (!rowAlreadyExists) {
+            throw createErr;
+          }
+        
+          // update the notes for the row if that's why it failed
+          await prisma.member_memberships.updateMany({
+            where: {
+              member_id: input.member_id,
+              membership_year: currentMembershipYear,
+            },
+            data: { notes: input.year_comments },
+          });
+          return { status: 'already_current' as const, name };
+        }
       } catch (err) {
         if (err instanceof TRPCError) {
           throw err;

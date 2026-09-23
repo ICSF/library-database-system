@@ -20,4 +20,5 @@ export async function disconnectPrisma(): Promise<void> {
   await prisma.$disconnect();
 }
 
+export { Prisma } from './generated/prisma/client.js'
 export type {PrismaClient} from './generated/prisma/client.js';
