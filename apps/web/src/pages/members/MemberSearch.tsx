@@ -132,7 +132,7 @@ export function MemberSearch() {
               <td>{member.email ?? ''}</td>
               <td>{member.status}</td>
               <td>
-                <Link to={`/portal/members/edit/${member.member_id}`}>Edit/Renew</Link>
+                <Link to={`/portal/members/edit/${member.member_id}`}>Edit {scope != 'current' ? '/ Renew' : ''}</Link>
               </td>
             </tr>
           ))}
