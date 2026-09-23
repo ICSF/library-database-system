@@ -2,8 +2,8 @@
   "name": "@library/api",
   "version": "1.0.0",
   "private": true,
-  "main": "dist/router.js",
-  "types": "dist/router.js",
+  "main": "dist/index.js",
+  "types": "dist/index.js",
   "scripts": {
     "build": "tsc --outDir dist",
     "dev": "tsx watch server.ts",
