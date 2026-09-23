@@ -1,18 +1,10 @@
 import { useState } from 'react';
+import type { inferRouterInputs } from '@trpc/server';
+import type { AppRouter } from '@library/api';
 import { useMemberFormOptions } from './useMemberFormOptions';
 
-export type MemberFormValues = {
-  first_name: string;
-  last_name: string;
-  member_type_id: number | null;
-  dept_id: number | null;
-  uni_year: string | null;
-  email: string;
-  comments: string | null;
-  year_comments: string | null;
-  is_disabled: boolean;
-  disabled_reason: string | null;
-};
+type RouterInputs = inferRouterInputs<AppRouter>;
+export type MemberFormValues = Omit<RouterInputs['updateMember'], 'member_id'>;
 
 type MemberFormProps = {
   onSubmit: (values: MemberFormValues) => boolean | Promise<boolean>;
