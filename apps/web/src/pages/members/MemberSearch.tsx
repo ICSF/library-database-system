@@ -75,6 +75,7 @@ export function MemberSearch() {
         Click 'Edit/Renew' to edit member details, or to renew them for the new academic year.
       </p>
 
+      {/* TODO: when click back button it doesn't save the dropdown option that was pressed */}
       <form>
         <table>
           <tbody>
@@ -132,6 +133,8 @@ export function MemberSearch() {
               <td>{member.email ?? ''}</td>
               <td>{member.status}</td>
               <td>
+                {/* TODO: make this so that it doesn't show 'renew' for current members even on the 
+                all member scope and even if they are disabled (but not for disabled and also current members */}
                 <Link to={`/portal/members/edit/${member.member_id}`}>Edit {scope != 'current' ? '/ Renew' : ''}</Link>
               </td>
             </tr>
