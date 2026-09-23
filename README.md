@@ -176,4 +176,5 @@ Vercel deploys new commits automatically when connected to GitHub.
 
 //TODO:
 - write abt pulling from db when schema changes
-- say use session pooler/direct connection url when developing.
+- say use session pooler/direct connection url when developing. but transaction in vercel
+- idk explain how to add api endpoint and stuff

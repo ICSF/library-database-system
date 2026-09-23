@@ -10,8 +10,6 @@ export function Sidebar() {
             <div style={{ textAlign: 'center' }}>
                 <Link to="/portal" id="logo">
                   <img
-
-                  /* TODO: fix this link */
                     src={`/logo_${isHead ? 'head' : 'duty'}.gif`}
                     alt="ICSF"
                     style={{ border: 0, margin: '10px 0' }}
