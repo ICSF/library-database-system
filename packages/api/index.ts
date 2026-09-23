@@ -62,6 +62,68 @@ async function getCurrentMembershipYear(client: Pick<PrismaClient, 'membership_s
   return settings.current_membership_year;
 }
 
+// Helper for updateMember and renewMember, since they both update member details
+const editableMemberFieldsSchema = z.object({
+  member_id: z.uuid(),
+  first_name: z.string().trim().min(1),
+  last_name: z.string().trim().min(1),
+  member_type_id: z.number().int().positive().nullable(),
+  dept_id: z.number().int().positive().nullable(),
+  uni_year: z.string().trim().nullable(),
+  email: z.string().trim().email(),
+  comments: z.string().trim().nullable(),
+  is_disabled: z.boolean(),
+  disabled_reason: z.string().trim().nullable(),
+})
+
+type EditableMemberFields = z.infer<typeof editableMemberFieldsSchema>;
+
+async function updateMemberDetails(
+  transaction: Prisma.TransactionClient,
+  input: EditableMemberFields,
+) {
+  // immediately check if the member exists or not to throw a clean NOT_FOUND
+  const existingMember = await transaction.members.findUnique({
+    where: { member_id: input.member_id },
+    select: { member_id: true },
+  });
+
+  if (!existingMember) {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: 'Member not found.',
+    });
+  }
+
+  return transaction.members.update({
+    where: { member_id: input.member_id },
+    data: {
+      first_name: input.first_name,
+      last_name: input.last_name,
+      member_type_id: input.member_type_id,
+      dept_id: input.dept_id,
+      uni_year: input.uni_year,
+      email: input.email,
+      comments: input.comments,
+      is_disabled: input.is_disabled,
+      disabled_reason: input.disabled_reason,
+    },
+
+    select: {
+      member_id: true,
+      first_name: true,
+      last_name: true,
+      member_type_id: true,
+      dept_id: true,
+      uni_year: true,
+      email: true,
+      comments: true,
+      is_disabled: true,
+      disabled_reason: true,
+    },
+  });
+}
+
 export const appRouter = t.router({
   /* PUBLIC PROCEDURES */
   // Catalogue List endpoint: returns a list of catalogue items, from the catalogue_search view
@@ -309,20 +371,9 @@ export const appRouter = t.router({
   // update operation to update member details
   updateMember: protectedProcedure
     .input(
-      z.object({
-        member_id: z.uuid(),
-        first_name: z.string().trim().min(1),
-        last_name: z.string().trim().min(1),
-        member_type_id: z.number().int().positive().nullable(),
-        dept_id: z.number().int().positive().nullable(),
-        uni_year: z.string().trim().nullable(),
-        email: z.email(),
-        comments: z.string().trim().nullable(),
+      editableMemberFieldsSchema.extend({
         year_comments: z.string().trim().nullable(),
-        is_disabled: z.boolean(),
-        disabled_reason: z.string().trim().nullable(),
-      })
-      .refine(
+      }).refine(
         (v) => !v.is_disabled || (v.disabled_reason && v.disabled_reason.length > 0),
         { message: 'A reason is required when disabling a member.', path: ['disabled_reason'] },
       ),
@@ -331,46 +382,7 @@ export const appRouter = t.router({
       try {
         return await prisma.$transaction(async (transaction) => {
           const currentMembershipYear = await getCurrentMembershipYear(transaction);
-
-          // Check existence explicitly first, so a missing member produces a clean NOT_FOUND 
-          const existingMember = await transaction.members.findUnique({
-            where: { member_id: input.member_id },
-            select: { member_id: true },
-          });
-
-          if (!existingMember) {
-            throw new TRPCError({
-              code: 'NOT_FOUND',
-              message: 'Member not found.',
-            });
-          }
-
-          const updatedMember = await transaction.members.update({
-            where: { member_id: input.member_id },
-            data: {
-              first_name: input.first_name,
-              last_name: input.last_name,
-              member_type_id: input.member_type_id,
-              dept_id: input.dept_id,
-              uni_year: input.uni_year,
-              email: input.email,
-              comments: input.comments,
-              is_disabled: input.is_disabled,
-              disabled_reason: input.disabled_reason,
-            },
-            select: { 
-              member_id: true,
-              first_name: true,
-              last_name: true,
-              member_type_id: true,
-              dept_id: true,
-              uni_year: true,
-              email: true,
-              comments: true,
-              is_disabled: true,
-              disabled_reason: true,
-             },
-          });
+          const updatedMember = await updateMemberDetails(transaction, input);
 
           // `count` tells us whether a membership row for the current year
           // actually existed to attach `year_comments` to 
@@ -416,53 +428,22 @@ export const appRouter = t.router({
   // adds a row to member_memberships with the uuid and the current membership year
   renewMember: protectedProcedure
     .input(
-      z.object({
-        member_id: z.uuid(),
-        first_name: z.string().trim().min(1),
-        last_name: z.string().trim().min(1),
-        member_type_id: z.number().int().positive().nullable(),
-        dept_id: z.number().int().positive().nullable(),
-        uni_year: z.string().trim().nullable(),
-        email: z.string().trim().email(),
-        comments: z.string().trim().nullable(),
+      editableMemberFieldsSchema.extend({
         year_comments: z.string().trim().nullable(),
-        is_disabled: z.boolean(),
-        disabled_reason: z.string().trim().nullable(),
-      }),
+      }).refine(
+        (v) => !v.is_disabled || (v.disabled_reason && v.disabled_reason.length > 0),
+        { message: 'A reason is required when disabling a member.', path: ['disabled_reason'] },
+      ),
     )
     .mutation(async ({ input }) => {
+      // stage 1: update member details
+      let name: string;
+      let currentMembershipYear: number; 
+
       try {
-        const { name, currentMembershipYear } = await prisma.$transaction(async (transaction) => {
+        const result = await prisma.$transaction(async (transaction) => {
           const currentMembershipYear = await getCurrentMembershipYear(transaction);
-
-          // check member existence explicitly first
-          const existingMember = await transaction.members.findUnique({
-            where: { member_id: input.member_id },
-            select: { member_id: true },
-          });
-
-          if (!existingMember) {
-            throw new TRPCError({
-              code: 'NOT_FOUND',
-              message: 'Member not found.',
-            });
-          }
-
-          const member = await transaction.members.update({
-            where: { member_id: input.member_id },
-            data: {
-              first_name: input.first_name,
-              last_name: input.last_name,
-              member_type_id: input.member_type_id,
-              dept_id: input.dept_id,
-              uni_year: input.uni_year,
-              email: input.email,
-              comments: input.comments,
-              is_disabled: input.is_disabled,
-              disabled_reason: input.disabled_reason,
-            },
-            select: { first_name: true, last_name: true },
-          });
+          const member = await updateMemberDetails(transaction, input);
 
           return {
             name: `${member.first_name} ${member.last_name}`,
@@ -470,23 +451,52 @@ export const appRouter = t.router({
           };
         });
 
-        // create membership row
-        try {
-          await prisma.member_memberships.create({
-            data: {
-              member_id: input.member_id,
-              membership_year: currentMembershipYear,
-              notes: input.year_comments,
-            },
-          });
-          return { status: 'success' as const, name };
-        } catch (createErr) {
-          const rowAlreadyExists =
-            createErr instanceof Prisma.PrismaClientKnownRequestError && createErr.code === 'P2002';
+        name = result.name;
+        currentMembershipYear = result.currentMembershipYear;
+      } catch(err) {
+        if (err instanceof TRPCError) {
+          throw err;
+        }
 
-          if (!rowAlreadyExists) {
-            throw createErr;
-          }
+        // email uniqueness constraint
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+          throw new TRPCError({
+            code: 'CONFLICT',
+            message: `A member with the email "${input.email}" already exists.`,
+            cause: err,
+          });
+        }
+
+        console.error('[renewMember] failed to update member details:', err);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to renew member.',
+          cause: err,
+        });
+      }
+
+      // stage 2: update membership row for current year
+      try {
+        await prisma.member_memberships.create({
+          data: {
+            member_id: input.member_id,
+            membership_year: currentMembershipYear,
+            notes: input.year_comments,
+          },
+        });
+        return { status: 'success' as const, name };
+      } catch (createErr) {
+        const rowAlreadyExists =
+          createErr instanceof Prisma.PrismaClientKnownRequestError && createErr.code === 'P2002';
+        
+        if (!rowAlreadyExists) {
+          console.error('[renewMember] failed to create/update membership row:', createErr);
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to renew member.',
+            cause: createErr,
+          });
+        }
         
           // update the notes for the row if that's why it failed
           await prisma.member_memberships.updateMany({
@@ -498,32 +508,20 @@ export const appRouter = t.router({
           });
           return { status: 'already_current' as const, name };
         }
-      } catch (err) {
-        if (err instanceof TRPCError) {
-          throw err;
-        }
-        console.error('[renewMember] db mutation failed:', err);
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to renew member.',
-          cause: err,
-        });
-      }
     }),
 
   // insert operation to add new member
   addMember: protectedProcedure
     .input(
-      z.object({
-        first_name: z.string().trim().min(1),
-        last_name: z.string().trim().min(1),
-        member_type_id: z.number().int().positive().nullable(),
-        dept_id: z.number().int().positive().nullable(),
-        uni_year: z.string().trim().nullable(),
-        email: z.email(),
-        comments: z.string().trim().nullable(),
-        year_comments: z.string().trim().nullable(),
-      }),
+      editableMemberFieldsSchema
+        .omit({
+          member_id: true, 
+          is_disabled: true, 
+          disabled_reason: true,
+        })
+        .extend({
+          year_comments: z.string().trim().nullable(),
+        })
     )
     .mutation(async ({ input }) => {
       try {

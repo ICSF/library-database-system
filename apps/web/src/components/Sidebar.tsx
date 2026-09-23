@@ -339,11 +339,6 @@ export function Sidebar() {
                   </tr>
                 </thead>
                 <tbody>
-                  {/*<tr>
-                    <td>
-                      <a href="/wiki/">ICSF Wiki</a>
-                    </td>
-                  </tr>*/}
                   <tr>
                     <td>
                       <a href="https://icsf.github.io/icsf/">ICSF Website</a>
