@@ -1,54 +1,8 @@
 import { prisma, Prisma, type PrismaClient } from '@library/db';
-import { createClient } from '@supabase/supabase-js';
-import {initTRPC, TRPCError} from '@trpc/server';
-import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
-import { env } from '@library/config';
+import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
+import { protectedProcedure, router } from '../context.js';
 
-// Server-side only Supabase client, used purely to verify tokens the
-// frontend sends us. Uses the SERVICE ROLE key - never ship this to a browser.
-const supabaseAdmin = createClient(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY);
-
-export async function createContext({ req }: CreateHTTPContextOptions) {
-  const authHeader = req.headers.authorization;
-  const token = authHeader?.startsWith('Bearer ')
-    ? authHeader.slice('Bearer '.length)
-    : undefined;
-
-  if (!token) {
-    return { user: null };
-  }
-
-  const { data, error } = await supabaseAdmin.auth.getUser(token);
-
-  if (error || !data.user) {
-    return { user: null };
-  }
-
-  return { user: data.user };
-}
-
-type Context = Awaited<ReturnType<typeof createContext>>;
-
-const t = initTRPC.context<Context>().create();
-
-const requireAuth = t.middleware(({ ctx, next }) => {
-  if (!ctx.user) {
-    throw new TRPCError({
-      code: 'UNAUTHORIZED',
-      message: 'You must be logged in as a committee member.',
-    });
-  }
-  // narrows ctx.user from `User | null` to `User` for anything downstream.
-  return next({ ctx: { ...ctx, user: ctx.user } });
-});
-
-// two procedures depending on whether the api route needs auth or not
-const publicProcedure = t.procedure;
-const protectedProcedure = t.procedure.use(requireAuth);
-
-// Keep the configured academic year in one place so add, edit, renew, and
-// member lookup operations all use the same membership-settings row.
 async function getCurrentMembershipYear(client: Pick<PrismaClient, 'membership_settings'>): Promise<number> {
   const settings = await client.membership_settings.findUnique({
     where: { singleton: true },
@@ -124,73 +78,7 @@ async function updateMemberDetails(
   });
 }
 
-export const appRouter = t.router({
-  /* PUBLIC PROCEDURES */
-  // Catalogue List endpoint: returns a list of catalogue items, from the catalogue_search view
-  catalogueList: publicProcedure.query(async () => {
-    try {
-      const rows = await prisma.catalogue_search.findMany({
-        select: {
-          title: true,
-          series: true,
-          series_num: true,
-          author_name: true,
-          isbn: true,
-        },
-        orderBy: [
-          { author_name: 'asc' },
-          { series: 'asc' },
-          { series_num: 'asc' },
-          { title: 'asc' },
-        ],
-      });
-      return rows;
-    } catch (err) {
-      console.error('[catalogueList] query failed:', err);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: `Unable to load catalogue`,
-        cause: err,
-      });
-    }
-  }),
-
-  /* PROTECTED PROCEDURES */
-
-  /* AUTH */
-  // who's signed in + committee role + access role
-  me: protectedProcedure.query(async ({ ctx }) => {
-    let committeeRow;
-    try {
-      committeeRow = await prisma.committee.findUnique({
-        where: { user_id: ctx.user.id },
-        select: { role: true, isHeadLibrarian: true },
-      });
-    } catch (err) {
-      console.error('[me] db query failed:', err);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to load user profile.',
-        cause: err,
-      });
-    }
-
-    if (!committeeRow) {
-      throw new TRPCError({
-        code: 'FORBIDDEN',
-        message: 'No committee record found for this account.',
-      });
-    }
-
-    return {
-      id: ctx.user.id,
-      email: ctx.user.email,
-      isHead: committeeRow.isHeadLibrarian,
-      role: committeeRow.role,
-    };
-  }),
-
-  /* MEMBERS */
+export const membersRouter = router({
   // returns info from departments table and member types table for members form
   memberFormOptions: protectedProcedure.query(async () => {
     try {
@@ -591,5 +479,3 @@ export const appRouter = t.router({
     }),
 
 });
-
-export type AppRouter = typeof appRouter;
