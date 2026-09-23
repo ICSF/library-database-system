@@ -7,6 +7,7 @@ import { MemberForm, type MemberFormValues } from './MemberForm';
 export function EditMember() {
   const { memberId } = useParams();
   const [member, setMember] = useState<MemberFormValues | null>(null);
+  const [isCurrentMember, setIsCurrentMember] = useState(false);
   const [formVersion, setFormVersion] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -29,7 +30,9 @@ export function EditMember() {
       try {
         const record = await trpc.memberById.query({ member_id: memberId });
         if (isCurrent) {
-          setMember(record);
+          const { isCurrentMember: memberIsCurrent, ...formValues } = record;
+          setMember(formValues);
+          setIsCurrentMember(memberIsCurrent);
         }
       } catch (error) {
         console.error('Failed to load member:', error);
@@ -65,8 +68,8 @@ export function EditMember() {
         member_id: memberId,
         ...values,
       });
-      const refreshedMember = await trpc.memberById.query({ member_id: memberId });
-      setMember(refreshedMember);
+      setMember({ ...values, year_comments: result.year_comments });
+      setIsCurrentMember(true);
       setFormVersion((version) => version + 1);
       setRenewStatus(result.status);
     } catch (error) {
@@ -95,7 +98,9 @@ export function EditMember() {
       });
       // The shared form uses default values, so refetch and remount it after
       // saving to show the database state rather than stale initial values.
-      setMember(result);
+      const { yearCommentsSaved, ...updatedMember } = result;
+      setMember(updatedMember);
+      setIsCurrentMember(yearCommentsSaved);
       setFormVersion((version) => version + 1);
       setSaveStatus('success');
 
@@ -140,7 +145,7 @@ export function EditMember() {
           submitLabel={saveStatus === 'saving' ? 'Saving changes...' : 'Save changes'}
           submitting={saveStatus === 'saving'}
           showDisableFields
-          onRenew={handleRenew}
+          onRenew={isCurrentMember ? undefined : handleRenew}
         />
       )}
       <p><Link to="/portal/members/search">Cancel</Link></p>

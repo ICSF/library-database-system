@@ -343,6 +343,7 @@ export const appRouter = t.router({
             ? {
                 ...member,
                 year_comments: membership?.notes ?? null,
+                isCurrentMember: membership != null,
               }
             : null;
         });
@@ -437,7 +438,7 @@ export const appRouter = t.router({
     )
     .mutation(async ({ input }) => {
       // stage 1: update member details
-      let name: string;
+      let memberDetails: Awaited<ReturnType<typeof updateMemberDetails>> & { name: string };
       let currentMembershipYear: number; 
 
       try {
@@ -446,13 +447,16 @@ export const appRouter = t.router({
           const member = await updateMemberDetails(transaction, input);
 
           return {
+            ...member,
             name: `${member.first_name} ${member.last_name}`,
-            currentMembershipYear,
+            currentMembershipYear: currentMembershipYear,
           };
         });
 
-        name = result.name;
-        currentMembershipYear = result.currentMembershipYear;
+        const { currentMembershipYear: year, ...rest } = result;
+        memberDetails = rest;
+        currentMembershipYear = year;
+
       } catch(err) {
         if (err instanceof TRPCError) {
           throw err;
@@ -484,7 +488,12 @@ export const appRouter = t.router({
             notes: input.year_comments,
           },
         });
-        return { status: 'success' as const, name };
+
+        return { 
+            status: 'success' as const,
+            ...memberDetails,
+            year_comments: input.year_comments,
+          };
       } catch (createErr) {
         const rowAlreadyExists =
           createErr instanceof Prisma.PrismaClientKnownRequestError && createErr.code === 'P2002';
@@ -506,7 +515,12 @@ export const appRouter = t.router({
             },
             data: { notes: input.year_comments },
           });
-          return { status: 'already_current' as const, name };
+          
+          return { 
+            status: 'already_current' as const,
+            ...memberDetails,
+            year_comments: input.year_comments,
+          };
         }
     }),
 
