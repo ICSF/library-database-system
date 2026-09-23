@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { trpc } from '../../lib/TRPC';
 import { MemberForm, type MemberFormValues } from './MemberForm';
-import { invalidateMemberFormOptions } from './useMemberFormOptions';
 
 export function EditMember() {
   const { memberId } = useParams();
@@ -65,7 +64,6 @@ export function EditMember() {
       const refreshedMember = await trpc.memberById.query({ member_id: memberId });
       setMember(refreshedMember);
       setFormVersion((version) => version + 1);
-      invalidateMemberFormOptions();
       setRenewStatus(result.status);
     } catch (error) {
       console.error('Failed to renew member:', error);
@@ -92,7 +90,6 @@ export function EditMember() {
       const refreshedMember = await trpc.memberById.query({ member_id: memberId });
       setMember(refreshedMember);
       setFormVersion((version) => version + 1);
-      invalidateMemberFormOptions();
       setSaveStatus('success');
 
       // if they have no membership row for the current year

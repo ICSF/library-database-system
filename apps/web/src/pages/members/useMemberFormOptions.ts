@@ -33,11 +33,6 @@ async function loadMemberFormOptions(): Promise<MemberFormOptions> {
   return optionsRequest;
 }
 
-export function invalidateMemberFormOptions() {
-  // The next form mount will fetch fresh database-backed options.
-  cachedOptions = null;
-}
-
 export function useMemberFormOptions() {
   const [memberTypeOptions, setMemberTypeOptions] = useState<MemberOption[]>([]);
   const [departmentOptions, setDepartmentOptions] = useState<MemberOption[]>([]);

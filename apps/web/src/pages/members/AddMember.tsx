@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { trpc } from '../../lib/TRPC';
 import { MemberForm, type MemberFormValues } from './MemberForm';
-import { invalidateMemberFormOptions } from './useMemberFormOptions';
 
 export function AddMember() {
   const [submissionStatus, setSubmissionStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
@@ -30,7 +29,6 @@ export function AddMember() {
         comments,
         year_comments,
       });
-      invalidateMemberFormOptions();
       setSubmissionStatus('success');
       return true;
     } catch (error) {
