@@ -58,8 +58,12 @@ export function EditMember() {
     try {
       const result = await trpc.renewMember.mutate({
         member_id: memberId,
-        notes: values.year_comments,
+        ...values,
       });
+      const refreshedMember = await trpc.memberById.query({ member_id: memberId });
+      setMember(refreshedMember);
+      setFormVersion((version) => version + 1);
+      invalidateMemberFormOptions();
       setRenewStatus(result.status);
     } catch (error) {
       console.error('Failed to renew member:', error);

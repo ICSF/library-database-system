@@ -306,7 +306,7 @@ export const appRouter = t.router({
         member_type_id: z.number().int().positive().nullable(),
         dept_id: z.number().int().positive().nullable(),
         uni_year: z.string().trim().nullable(),
-        email: z.email().trim(),
+        email: z.email(),
         comments: z.string().trim().nullable(),
         year_comments: z.string().trim().nullable(),
         is_disabled: z.boolean(),
@@ -356,12 +356,22 @@ export const appRouter = t.router({
       }
     }),
 
-  // renew a member: add a row to member_memberships with the uuid and the current membership year
+  // renew a member: updates member info 
+  // adds a row to member_memberships with the uuid and the current membership year
   renewMember: protectedProcedure
     .input(
       z.object({
         member_id: z.uuid(),
-        notes: z.string().trim().nullable(),
+        first_name: z.string().trim().min(1),
+        last_name: z.string().trim().min(1),
+        member_type_id: z.number().int().positive().nullable(),
+        dept_id: z.number().int().positive().nullable(),
+        uni_year: z.string().trim().nullable(),
+        email: z.string().trim().email(),
+        comments: z.string().trim().nullable(),
+        year_comments: z.string().trim().nullable(),
+        is_disabled: z.boolean(),
+        disabled_reason: z.string().trim().nullable(),
       }),
     )
     .mutation(async ({ input }) => {
@@ -369,28 +379,45 @@ export const appRouter = t.router({
         return await prisma.$transaction(async (transaction) => {
           const currentMembershipYear = await getCurrentMembershipYear(transaction);
 
-          const member = await transaction.members.findUnique({
+          const existingMember = await transaction.members.findUnique({
             where: { member_id: input.member_id },
-            select: { first_name: true, last_name: true },
+            select: { member_id: true },
           });
 
-          if (!member) {
+          if (!existingMember) {
             throw new TRPCError({
               code: 'NOT_FOUND',
               message: 'Member not found.',
             });
           }
 
-          const existingMembership = await transaction.member_memberships.findFirst({
+          const member = await transaction.members.update({
+            where: { member_id: input.member_id },
+            data: {
+              first_name: input.first_name,
+              last_name: input.last_name,
+              member_type_id: input.member_type_id,
+              dept_id: input.dept_id,
+              uni_year: input.uni_year,
+              email: input.email,
+              comments: input.comments,
+              is_disabled: input.is_disabled,
+              disabled_reason: input.disabled_reason,
+            },
+            select: { first_name: true, last_name: true },
+          });
+
+          const name = `${member.first_name} ${member.last_name}`;
+
+          const { count } = await transaction.member_memberships.updateMany({
             where: {
               member_id: input.member_id,
               membership_year: currentMembershipYear,
             },
-            select: { member_id: true },
+            data: { notes: input.year_comments },
           });
 
-          const name = `${member.first_name} ${member.last_name}`;
-          if (existingMembership) {
+          if (count > 0) {
             return { status: 'already_current' as const, name };
           }
 
@@ -398,7 +425,7 @@ export const appRouter = t.router({
             data: {
               member_id: input.member_id,
               membership_year: currentMembershipYear,
-              notes: input.notes,
+              notes: input.year_comments,
             },
           });
 
@@ -426,7 +453,7 @@ export const appRouter = t.router({
         member_type_id: z.number().int().positive().nullable(),
         dept_id: z.number().int().positive().nullable(),
         uni_year: z.string().trim().nullable(),
-        email: z.email().trim(),
+        email: z.email(),
         comments: z.string().trim().nullable(),
         year_comments: z.string().trim().nullable(),
       }),
