@@ -1,7 +1,7 @@
-import {env} from '@library/config';
-import {PrismaPg} from '@prisma/adapter-pg';
+import { env } from '@library/config';
+import { PrismaPg } from '@prisma/adapter-pg';
 
-import {PrismaClient} from './generated/prisma/client.js';
+import { PrismaClient } from './generated/prisma/client.js';
 
 function createPrismaClient(): PrismaClient {
   const adapter = new PrismaPg({connectionString: env.DATABASE_URL});
@@ -21,4 +21,4 @@ export async function disconnectPrisma(): Promise<void> {
 }
 
 export { Prisma } from './generated/prisma/client.js'
-export type {PrismaClient} from './generated/prisma/client.js';
+export type { PrismaClient } from './generated/prisma/client.js';

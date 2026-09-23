@@ -1,7 +1,7 @@
-import {appRouter, createContext} from '@library/api';
-import {createHTTPHandler} from '@trpc/server/adapters/standalone';
+import { appRouter, createContext } from '@library/api';
+import { createHTTPHandler } from '@trpc/server/adapters/standalone';
 import cors from 'cors';
-import type {IncomingMessage, ServerResponse} from 'node:http';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 
 // set cors allowed origin for the info website too as it calls this API for catalogue
 const ALLOWED_ORIGINS = ['https://icsf.github.io', 'http://localhost:5173'];

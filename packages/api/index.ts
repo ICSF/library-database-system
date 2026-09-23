@@ -1,4 +1,4 @@
-import {prisma, Prisma, type PrismaClient} from '@library/db';
+import { prisma, Prisma, type PrismaClient } from '@library/db';
 import { createClient } from '@supabase/supabase-js';
 import {initTRPC, TRPCError} from '@trpc/server';
 import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
@@ -181,8 +181,8 @@ export const appRouter = t.router({
             .filter((member): member is typeof member & { member_id: string } => member.member_id !== null)
             .map((member) => ({
               member_id: member.member_id,
-              first_name: member.first_name!,
-              last_name: member.last_name!,
+              first_name: member.first_name ?? '',
+              last_name: member.last_name ?? '',
               email: member.email,
               status: 'Current' as const,
             }));
