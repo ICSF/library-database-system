@@ -397,7 +397,7 @@ export const appRouter = t.router({
 
           return {
             ...updatedMember,
-            year_comments: input.year_comments,
+            year_comments: count > 0 ? input.year_comments : null,
             name: `${updatedMember.first_name} ${updatedMember.last_name}`,
             yearCommentsSaved: count > 0,
           };

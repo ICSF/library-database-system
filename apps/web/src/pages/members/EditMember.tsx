@@ -105,7 +105,7 @@ export function EditMember() {
       setSaveStatus('success');
 
       // if they have no membership row for the current year
-      if (!result.yearCommentsSaved) {
+      if (!result.yearCommentsSaved && values.year_comments != result.year_comments) {
         setYearCommentsWarning(
           `Can't update year-specific comments, as ${result.name} is not a member this year.`,
         );
