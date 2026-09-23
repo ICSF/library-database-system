@@ -315,8 +315,21 @@ export const appRouter = t.router({
     )
     .mutation(async ({ input }) => {
       try {
-        const member = await prisma.$transaction(async (transaction) => {
+        return await prisma.$transaction(async (transaction) => {
           const currentMembershipYear = await getCurrentMembershipYear(transaction);
+
+          // Check existence explicitly first, so a missing member produces a clean NOT_FOUND 
+          const existingMember = await transaction.members.findUnique({
+            where: { member_id: input.member_id },
+            select: { member_id: true },
+          });
+
+          if (!existingMember) {
+            throw new TRPCError({
+              code: 'NOT_FOUND',
+              message: 'Member not found.',
+            });
+          }
 
           const updatedMember = await transaction.members.update({
             where: { member_id: input.member_id },
@@ -331,21 +344,25 @@ export const appRouter = t.router({
               is_disabled: input.is_disabled,
               disabled_reason: input.disabled_reason,
             },
-            select: { member_id: true },
+            select: { member_id: true, first_name: true, last_name: true },
           });
 
-          await transaction.member_memberships.updateMany({
+          // `count` tells us whether a membership row for the current year
+          // actually existed to attach `year_comments` to 
+          const { count } = await transaction.member_memberships.updateMany({
             where: {
               member_id: input.member_id,
-                membership_year: currentMembershipYear,
+              membership_year: currentMembershipYear,
             },
             data: { notes: input.year_comments },
           });
 
-          return updatedMember;
-        });
-
-        return member;
+          return {
+            member_id: updatedMember.member_id,
+            name: `${updatedMember.first_name} ${updatedMember.last_name}`,
+            yearCommentsSaved: count > 0,
+          };
+          });
       } catch (err) {
         console.error('[updateMember] db mutation failed:', err);
         throw new TRPCError({

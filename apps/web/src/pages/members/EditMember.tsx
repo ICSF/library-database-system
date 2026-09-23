@@ -12,6 +12,7 @@ export function EditMember() {
   const [loadError, setLoadError] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [renewStatus, setRenewStatus] = useState<'idle' | 'renewing' | 'success' | 'already_current' | 'error'>('idle');
+  const [yearCommentsWarning, setYearCommentsWarning] = useState<string | null>(null);
 
   useEffect(() => {
     let isCurrent = true;
@@ -54,6 +55,7 @@ export function EditMember() {
     }
 
     setRenewStatus('renewing');
+    setYearCommentsWarning(null);
 
     try {
       const result = await trpc.renewMember.mutate({
@@ -78,9 +80,10 @@ export function EditMember() {
     }
 
     setSaveStatus('saving');
+    setYearCommentsWarning(null);
 
     try {
-      await trpc.updateMember.mutate({
+      const result = await trpc.updateMember.mutate({
         member_id: memberId,
         ...values,
       });
@@ -91,6 +94,13 @@ export function EditMember() {
       setFormVersion((version) => version + 1);
       invalidateMemberFormOptions();
       setSaveStatus('success');
+
+      // if they have no membership row for the current year
+      if (!result.yearCommentsSaved) {
+        setYearCommentsWarning(
+          `Can't update year-specific comments, as ${result.name} is not a member this year.`,
+        );
+      }
       return true;
     } catch (error) {
       console.error('Failed to update member:', error);
@@ -107,12 +117,13 @@ export function EditMember() {
       </p>
       {renewStatus === 'success' && member && <p className="info">{member.first_name} {member.last_name} renewed successfully.</p>}
       {renewStatus === 'already_current' && member && (
-        <p className="info">{member.first_name} {member.last_name} is already a member this year.</p>
+        <p className="error">{member.first_name} {member.last_name} is already a member this year.</p>
       )}
       {renewStatus === 'error' && <p className="error">Unable to renew member.</p>}
       {loading && <p className="help">Loading member...</p>}
       {loadError && <p className="error">Unable to load member.</p>}
       {saveStatus === 'success' && <p className="info">Member updated successfully.</p>}
+      {saveStatus === 'success' && yearCommentsWarning && <p className="error">{yearCommentsWarning}</p>}
       {saveStatus === 'error' && <p className="error">Unable to update member.</p>}
       {!loading && !loadError && member && (
         <MemberForm
