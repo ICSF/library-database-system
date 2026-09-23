@@ -344,7 +344,18 @@ export const appRouter = t.router({
               is_disabled: input.is_disabled,
               disabled_reason: input.disabled_reason,
             },
-            select: { member_id: true, first_name: true, last_name: true },
+            select: { 
+              member_id: true,
+              first_name: true,
+              last_name: true,
+              member_type_id: true,
+              dept_id: true,
+              uni_year: true,
+              email: true,
+              comments: true,
+              is_disabled: true,
+              disabled_reason: true,
+             },
           });
 
           // `count` tells us whether a membership row for the current year
@@ -358,11 +369,12 @@ export const appRouter = t.router({
           });
 
           return {
-            member_id: updatedMember.member_id,
+            ...updatedMember,
+            year_comments: input.year_comments,
             name: `${updatedMember.first_name} ${updatedMember.last_name}`,
             yearCommentsSaved: count > 0,
           };
-          });
+        });
       } catch (err) {
         console.error('[updateMember] db mutation failed:', err);
         throw new TRPCError({

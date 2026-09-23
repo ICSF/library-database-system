@@ -87,8 +87,7 @@ export function EditMember() {
       });
       // The shared form uses default values, so refetch and remount it after
       // saving to show the database state rather than stale initial values.
-      const refreshedMember = await trpc.memberById.query({ member_id: memberId });
-      setMember(refreshedMember);
+      setMember(result);
       setFormVersion((version) => version + 1);
       setSaveStatus('success');
 
