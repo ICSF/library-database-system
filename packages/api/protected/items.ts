@@ -1,9 +1,10 @@
 import { prisma } from '@library/db';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { publicProcedure, router } from '../context.js';
+import { protectedProcedure, router } from '../context.js';
 
 const MAX_PAGE_SIZE = 100;
+const AUTHOR_SEARCH_LIMIT = 10;
 
 const itemListInput = z.object({
   search: z.string().trim().default(''),
@@ -15,10 +16,39 @@ const itemGetInput = z.object({
   item_id: z.number().int().positive(),
 });
 
+const authorSearchInput = z.object({
+  search: z.string().trim().min(1),
+});
+
+// author_id is nullable: if the user typed a name without picking a
+// suggestion from the autocomplete list, the frontend sends author_id:
+// null and author_name as free text, and this procedure does a
+// find-or-create by exact (case-insensitive) name match.
+const itemUpdateInput = z.object({
+  item_id: z.number().int().positive(),
+  title: z.string().trim().min(1, 'Title is required.'),
+  author_id: z.number().int().positive().nullable(),
+  author_name: z.string().trim().min(1, 'Author is required.'),
+  series_name: z.string().trim().nullable(),
+  series_num: z.string().trim().nullable(),
+  type_id: z.number().int().positive(),
+  location_id: z.number().int().positive(),
+  isbn: z
+    .string()
+    .trim()
+    .nullable(),
+  is_damaged: z.boolean(),
+  is_awol: z.boolean(),
+  is_retired: z.boolean(),
+  donated_by: z.string().trim().nullable(),
+  comments: z.string().nullable(),
+  reviews: z.string().nullable(),
+});
+
 export const itemsRouter = router({
   // Returns a single page of items, optionally filtered by a search term
   // across title / author / series / ISBN. 
-  itemList: publicProcedure.input(itemListInput).query(async ({ input }) => {
+  itemList: protectedProcedure.input(itemListInput).query(async ({ input }) => {
     const { search, page, pageSize } = input;
 
     const where = search
@@ -92,63 +122,182 @@ export const itemsRouter = router({
 
   // Returns the full record for a single item, for the read-only item
   // Returns null if no item with that id exists 
-  itemGet: publicProcedure.input(itemGetInput).query(async ({ input }) => {
+  itemGet: protectedProcedure.input(itemGetInput).query(async ({ input }) => {
     const { item_id } = input;
 
     try {
-      const row = await prisma.catalogue.findFirst({
+      const row = await prisma.items.findUnique({
         where: { item_id },
-        select: {
-          item_id: true,
-          title: true,
-          author_name: true,
-          series_name: true,
-          series_num: true,
-          item_type: true,
-          location: true,
-          comments: true,
-          reviews: true,
-          isbn: true,
-          is_borrowable: true,
-          is_damaged: true,
-          is_awol: true,
-          is_retired: true,
-          retire_date: true,
-          acquire_date: true,
-          donated_by: true,
+        include: {
+          authors: { select: { name: true } },
+          media_types: { select: { media_type: true } },
+          locations: { select: { name: true } },
         },
       });
-
-      if (!row || row.item_id === null) {
-        return null;
-      }
-
+      
+      if (!row) return null;
+      
       return {
         item_id: row.item_id,
-        title: row.title ?? '',
-        author_name: row.author_name ?? '',
-        series_name: row.series_name ?? null,
-        series_num: row.series_num ?? null,
-        item_type: row.item_type ?? 'Unknown',
-        location: row.location ?? 'Unknown',
-        comments: row.comments ?? null,
-        reviews: row.reviews ?? null,
-        isbn: row.isbn ?? null,
-        is_borrowable: row.is_borrowable ?? false,
-        is_damaged: row.is_damaged ?? false,
-        is_awol: row.is_awol ?? false,
-        is_retired: row.is_retired ?? false,
+        title: row.title,
+        author_id: row.author_id,
+        author_name: row.authors.name,
+        series_name: row.series,
+        series_num: row.series_num,
+        type_id: row.type_id,
+        item_type: row.media_types.media_type,
+        location_id: row.location_id,
+        location: row.locations.name,
+        comments: row.comments,
+        reviews: row.reviews,
+        isbn: row.isbn,
+        is_borrowable: row.is_borrowable,
+        is_damaged: row.is_damaged,
+        is_awol: row.is_awol,
+        is_retired: row.is_retired,
         retire_date: row.retire_date ? row.retire_date.toISOString() : null,
         acquire_date: row.acquire_date ? row.acquire_date.toISOString() : null,
-        donated_by: row.donated_by ?? null,
+        donated_by: row.donated_by,
+      };
+          } catch (err) {
+            console.error('[catalogue] itemGet query failed:', err);
+            throw new TRPCError({
+              code: 'INTERNAL_SERVER_ERROR',
+              message: 'Unable to load item',
+              cause: err,
+            });
+          }
+        }),
+      
+
+  // Dropdown data sources for the add/edit item form.
+  mediaTypeList: protectedProcedure.query(async () => {
+    const rows = await prisma.media_types.findMany({
+      select: { media_type_id: true, media_type: true },
+      orderBy: { media_type: 'asc' },
+    });
+    return rows.map((row) => ({ id: row.media_type_id, name: row.media_type }));
+  }),
+
+  locationList: protectedProcedure.query(async () => {
+    const rows = await prisma.locations.findMany({
+      select: { location_id: true, name: true },
+      orderBy: { name: 'asc' },
+    });
+    return rows.map((row) => ({ id: row.location_id, name: row.name }));
+  }),  
+
+  // Autocomplete-as-you-type author search. 
+  // Deliberately small limit - not a full paginated search.
+  authorSearch: protectedProcedure.input(authorSearchInput).query(async ({ input }) => {
+    const rows = await prisma.authors.findMany({
+      where: { name: { contains: input.search, mode: 'insensitive' } },
+      select: { author_id: true, name: true },
+      orderBy: { name: 'asc' },
+      take: AUTHOR_SEARCH_LIMIT,
+    });
+    return rows;
+  }),
+
+  // Updates an item:
+  // Creates or finds an author if the author_id wasn't supplied
+  // Updates retire date if the retired flag is set
+  itemUpdate: protectedProcedure.input(itemUpdateInput).mutation(async ({ input }) => {
+    const { item_id, author_id, author_name, is_damaged, is_awol, is_retired, ...rest } = input;
+
+    try {
+      const updated = await prisma.$transaction(async (tx) => {
+        const current = await tx.items.findUnique({
+          where: { item_id },
+          select: { is_retired: true },
+        });
+
+        if (!current) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Item not found.' });
+        }
+
+        // --- Resolve author -------------------------------------------------
+        let resolvedAuthorId = author_id;
+
+        if (resolvedAuthorId === null) {
+          const existingAuthor = await tx.authors.findFirst({
+            where: { name: { equals: author_name, mode: 'insensitive' } },
+            select: { author_id: true },
+          });
+
+          resolvedAuthorId = existingAuthor
+            ? existingAuthor.author_id
+            : (await tx.authors.create({ data: { name: author_name } })).author_id;
+        }
+
+        // --- Resolve retire_date ---------------------------------------------
+        let retireDateUpdate: Date | null | undefined;
+        if (!current.is_retired && is_retired) {
+          retireDateUpdate = new Date(); // false -> true: stamp today
+        } else if (!is_retired) {
+          retireDateUpdate = null; // -> false: always clear
+        } else {
+          retireDateUpdate = undefined; // true -> true: leave untouched
+        }
+
+        // --- Resolve is_borrowable --------------------------------------------
+        const isBorrowable = !is_damaged && !is_awol && !is_retired;
+
+        return tx.items.update({
+          where: { item_id },
+          data: {
+            title: rest.title,
+            author_id: resolvedAuthorId,
+            series: rest.series_name,
+            series_num: rest.series_num,
+            type_id: rest.type_id,
+            location_id: rest.location_id,
+            isbn: rest.isbn,
+            is_damaged,
+            is_awol,
+            is_retired,
+            is_borrowable: isBorrowable,
+            donated_by: rest.donated_by,
+            comments: rest.comments,
+            reviews: rest.reviews,
+            ...(retireDateUpdate !== undefined ? { retire_date: retireDateUpdate } : {}),
+          },
+          include: { authors: true },
+        });
+      });
+
+      return {
+        item_id: updated.item_id,
+        title: updated.title,
+        author_id: updated.author_id,
+        author_name: updated.authors.name,
+        series_name: updated.series,
+        series_num: updated.series_num,
+        type_id: updated.type_id,
+        location_id: updated.location_id,
+        isbn: updated.isbn,
+        is_damaged: updated.is_damaged,
+        is_awol: updated.is_awol,
+        is_retired: updated.is_retired,
+        is_borrowable: updated.is_borrowable,
+        retire_date: updated.retire_date ? updated.retire_date.toISOString() : null,
+        acquire_date: updated.acquire_date ? updated.acquire_date.toISOString() : null,
+        donated_by: updated.donated_by,
+        comments: updated.comments,
+        reviews: updated.reviews,
       };
     } catch (err) {
-      console.error('[catalogue] itemGet query failed:', err);
+      if (err instanceof TRPCError) {
+        throw err;
+      }
+      console.error('[itemUpdate] mutation failed:', err);
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
-        message: 'Unable to load item',
+        message: 'Unable to update item',
         cause: err,
       });
     }
   }),
+
+
 });

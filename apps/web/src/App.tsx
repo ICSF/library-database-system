@@ -11,6 +11,7 @@ import { ViewItem } from './pages/items/ViewItem';
 
 import './App.css';
 import {PortalLayout} from './layouts/PortalLayout';
+import {EditItem} from './pages/items/EditItem';
 
 function Layout() {
   const { session } = useAuth();
@@ -66,6 +67,7 @@ function App() {
           <Route path="members/edit/:memberId" element={<EditMember />} />
           <Route path="items/search" element={<ItemSearch />} />
           <Route path="items/view/:itemId" element={<ViewItem />} />
+          <Route path="items/edit/:itemId" element={<EditItem />} />
           {/* more protected /portal/* routes go here as the app grows */}
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

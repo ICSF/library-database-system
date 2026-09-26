@@ -1,3 +1,5 @@
+/* Shared types and helpers for item pages */
+
 export type ItemStatusFlags = {
   is_borrowable: boolean;
   is_damaged: boolean;
@@ -43,12 +45,11 @@ export function formatDate(value: string | null): string {
   if (Number.isNaN(parsed.getTime())) {
     return '';
   }
-  
-  const day = String(parsed.getDate()).padStart(2, '0');
-  const month = String(parsed.getMonth() + 1).padStart(2, '0'); 
-  const year = parsed.getFullYear();
-
-  return `${day}/${month}/${year}`;
+  return parsed.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
 }
 
 export function getStatusBadges(item: ItemStatusFlags): string[] {
@@ -68,4 +69,48 @@ export function getStatusBadges(item: ItemStatusFlags): string[] {
   }
 
   return badges;
+}
+
+// helper functions for validating ISBNs
+function isValidIsbn10(value: string): boolean {
+  if (!/^\d{9}[\dX]$/.test(value)) {
+    return false;
+  }
+
+  let sum = 0;
+  for (let i = 0; i < 10; i += 1) {
+    const char = value[i];
+    const digit = char === 'X' ? 10 : Number(char);
+    sum += (10 - i) * digit;
+  }
+
+  return sum % 11 === 0;
+}
+
+function isValidIsbn13(value: string): boolean {
+  if (!/^\d{13}$/.test(value)) {
+    return false;
+  }
+
+  let sum = 0;
+  for (let i = 0; i < 13; i += 1) {
+    const digit = Number(value[i]);
+    sum += digit * (i % 2 === 0 ? 1 : 3);
+  }
+
+  return sum % 10 === 0;
+}
+
+// Accepts hyphens/spaces in the input (e.g. "978-0-13-468599-1") and
+// strips them before validating. An empty string is not valid
+export function isValidIsbn(rawValue: string): boolean {
+  const value = rawValue.replace(/[-\s]/g, '').toUpperCase();
+
+  if (value.length === 10) {
+    return isValidIsbn10(value);
+  }
+  if (value.length === 13) {
+    return isValidIsbn13(value);
+  }
+  return false;
 }

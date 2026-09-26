@@ -220,6 +220,7 @@ view overdue_loans {
 view catalogue {
   item_id       Int?
   title         String?
+  author_id     Int?
   author_name   String?
   series_name   String?
   series_num    String?
