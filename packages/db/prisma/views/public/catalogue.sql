@@ -6,16 +6,11 @@ SELECT
   items.series_num,
   media_types.media_type AS item_type,
   locations.name AS location,
-  items.comments,
-  items.reviews,
   items.isbn,
   items.is_borrowable,
   items.is_damaged,
   items.is_awol,
-  items.is_retired,
-  items.retire_date,
-  items.acquire_date,
-  items.donated_by
+  items.is_retired
 FROM
   items,
   authors,

@@ -225,14 +225,9 @@ view catalogue {
   series_num    String?
   item_type     String?
   location      String?
-  comments      String?
-  reviews       String?
   isbn          String?
   is_borrowable Boolean?
   is_damaged    Boolean?
   is_awol       Boolean?
   is_retired    Boolean?
-  retire_date   DateTime? @db.Date
-  acquire_date  DateTime? @db.Date
-  donated_by    String?
 }
