@@ -6,7 +6,7 @@ import { Portal } from './pages/Portal';
 import { AddMember } from './pages/members/AddMember';
 import { EditMember } from './pages/members/EditMember';
 import { MemberSearch } from './pages/members/MemberSearch';
-import { ItemSearch } from './pages/catalogue/ItemSearch';
+import { ItemSearch } from './pages/items/ItemSearch';
 
 import './App.css';
 import {PortalLayout} from './layouts/PortalLayout';
