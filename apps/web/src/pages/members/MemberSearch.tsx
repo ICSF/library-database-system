@@ -127,8 +127,8 @@ export function MemberSearch() {
           </tr>
         </thead>
         <tbody>
-          {filteredMembers.map((member) => (
-            <tr className="bg2" key={member.member_id}>
+          {filteredMembers.map((member, index) => (
+            <tr className={index % 2 == 0 ? 'bg2' : 'bg3'} key={member.member_id}>
               <td>{member.first_name} {member.last_name}</td>
               <td>{member.email ?? ''}</td>
               <td>{member.status}</td>

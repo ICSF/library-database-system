@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { trpc } from '../../lib/TRPC';
+import { useAuth } from '../../auth/useAuth';
 
 type ItemRecord = {
   item_id: number;
@@ -16,6 +17,8 @@ type ItemRecord = {
   is_awol: boolean;
   is_retired: boolean;
 };
+
+// paginate the query so as to not overload the page with too much data - becomes rlly slow
 const PAGE_SIZE = 50;
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -26,6 +29,7 @@ function formatSeries(seriesName: string | null, seriesNum: string | null): stri
   return seriesNum != null ? `${seriesName} #${seriesNum}` : seriesName;
 }
 
+// borrowable, damaged, awol, retired badges
 function getStatusBadges(item: ItemRecord): string[] {
   const badges: string[] = [];
 
@@ -45,7 +49,13 @@ function getStatusBadges(item: ItemRecord): string[] {
   return badges;
 }
 
+// scrolls when next page is clicked
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 export function ItemSearch() {
+  const { profile } = useAuth();
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -53,6 +63,7 @@ export function ItemSearch() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+
 
   // debounce the raw input before it feeds the actual query, so we don't
   // fire a request on every keystroke against a 16,000-row table.
@@ -103,6 +114,16 @@ export function ItemSearch() {
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / PAGE_SIZE)), [total]);
 
+  function goToPreviousPage() {
+    setPage((current) => Math.max(1, current - 1));
+    scrollToTop();
+  }
+
+  function goToNextPage() {
+    setPage((current) => Math.min(totalPages, current + 1));
+    scrollToTop();
+  }
+
   return (
     <>
       <h1>Items</h1>
@@ -138,7 +159,7 @@ export function ItemSearch() {
       {loading && <p className="help">Loading items...</p>}
       {error && <p className="error">Unable to load items.</p>}
 
-      <table className="list" width="99%">
+      <table className="list" width="100%">
         <thead>
           <tr className="bg1">
             <th>Title</th>
@@ -151,8 +172,8 @@ export function ItemSearch() {
           </tr>
         </thead>
         <tbody>
-          {items.map((item) => (
-            <tr className="bg2" key={item.item_id}>
+          {items.map((item, index) => (
+            <tr className={index % 2 === 0 ? 'bg2' : 'bg3'} key={item.item_id}>
               <td>{item.title}</td>
               <td>{item.author_name}</td>
               <td>{formatSeries(item.series_name, item.series_num)}</td>
@@ -161,7 +182,14 @@ export function ItemSearch() {
               <td>{getStatusBadges(item).join(', ')}</td>
               <td>
                 <Link to={`/portal/items/view/${item.item_id}`}>View</Link>
+                {profile?.isHead ? (
+                  <>
+                    <br/>
+                    <Link to={`/portal/items/edit/${item.item_id}`}>Edit</Link>
+                  </>
+                ) : ''}
               </td>
+              
             </tr>
           ))}
           {!loading && items.length === 0 && (
@@ -179,7 +207,7 @@ export function ItemSearch() {
           <button
             type="button"
             disabled={page <= 1 || loading}
-            onClick={() => setPage((current) => Math.max(1, current - 1))}
+            onClick={goToPreviousPage}
           >
             Previous
           </button>
@@ -189,7 +217,7 @@ export function ItemSearch() {
           <button
             type="button"
             disabled={page >= totalPages || loading}
-            onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+            onClick={goToNextPage}
           >
             Next
           </button>
