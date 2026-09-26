@@ -48,6 +48,7 @@ function Layout() {
 // Route table - The /portal branch is nested within its own index route so that
 // future pages become covered under it and by the one ProtectedRoute
 function App() {
+  const { profile } = useAuth();
 
   return (
     <Routes>
@@ -68,8 +69,12 @@ function App() {
           <Route path="members/edit/:memberId" element={<EditMember />} />
           <Route path="items/search" element={<ItemSearch />} />
           <Route path="items/view/:itemId" element={<ViewItem />} />
-          <Route path="items/edit/:itemId" element={<EditItem />} />
-          <Route path="items/add" element={<AddItem />} />
+          { profile?.isHead &&
+            <Route path="items/edit/:itemId" element={<EditItem />} />
+          }
+          { profile?.isHead &&
+            <Route path="items/add" element={<AddItem />} />
+          }
           {/* more protected /portal/* routes go here as the app grows */}
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
