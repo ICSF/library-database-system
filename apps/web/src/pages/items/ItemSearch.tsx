@@ -2,52 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { trpc } from '../../lib/TRPC';
 import { useAuth } from '../../auth/useAuth';
-
-type ItemRecord = {
-  item_id: number;
-  title: string;
-  author_name: string;
-  series_name: string | null;
-  series_num: string | null;
-  item_type: string;
-  location: string;
-  isbn: string | null;
-  is_borrowable: boolean;
-  is_damaged: boolean;
-  is_awol: boolean;
-  is_retired: boolean;
-};
+import { formatSeries, getStatusBadges, type ItemSummary } from './ItemsUtils';
 
 // paginate the query so as to not overload the page with too much data - becomes rlly slow
 const PAGE_SIZE = 50;
 const SEARCH_DEBOUNCE_MS = 300;
-
-function formatSeries(seriesName: string | null, seriesNum: string | null): string {
-  if (!seriesName) {
-    return '';
-  }
-  return seriesNum != null ? `${seriesName} #${seriesNum}` : seriesName;
-}
-
-// borrowable, damaged, awol, retired badges
-function getStatusBadges(item: ItemRecord): string[] {
-  const badges: string[] = [];
-
-  if (item.is_borrowable) {
-    badges.push('Borrowable');
-  }
-  if (item.is_damaged) {
-    badges.push('Damaged');
-  }
-  if (item.is_awol) {
-    badges.push('AWOL');
-  }
-  if (item.is_retired) {
-    badges.push('Retired');
-  }
-
-  return badges;
-}
 
 // scrolls when next page is clicked
 function scrollToTop() {
@@ -59,7 +18,7 @@ export function ItemSearch() {
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [items, setItems] = useState<ItemRecord[]>([]);
+  const [items, setItems] = useState<ItemSummary[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);

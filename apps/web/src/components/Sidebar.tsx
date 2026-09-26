@@ -100,7 +100,7 @@ export function Sidebar() {
                             </tr>
                             <tr>
                                 <td>
-                                    <Link to="/portal/items/edit">Edit Item</Link>
+                                    <Link to="/portal/items/search">Edit Item</Link>
                                 </td>
                             </tr>
                             {/* Edit Authors */}
