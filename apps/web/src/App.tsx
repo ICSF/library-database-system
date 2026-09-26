@@ -12,6 +12,7 @@ import { ViewItem } from './pages/items/ViewItem';
 import './App.css';
 import {PortalLayout} from './layouts/PortalLayout';
 import {EditItem} from './pages/items/EditItem';
+import {AddItem} from './pages/items/AddItem';
 
 function Layout() {
   const { session } = useAuth();
@@ -68,6 +69,7 @@ function App() {
           <Route path="items/search" element={<ItemSearch />} />
           <Route path="items/view/:itemId" element={<ViewItem />} />
           <Route path="items/edit/:itemId" element={<EditItem />} />
+          <Route path="items/add" element={<AddItem />} />
           {/* more protected /portal/* routes go here as the app grows */}
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

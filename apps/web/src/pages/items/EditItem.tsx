@@ -160,9 +160,11 @@ export function EditItem() {
     <>
       <h1>Edit Item</h1>
       <p className="help">
-        Here, you can edit item details. To add an author, type the author's name in the format
-        'Lastname, Firstname'. If the author already exists, their name should appear as you type, in 
-        which case you can click them. If the author does not exist, just type in the name and save it :)
+        Here, you can edit item details. <br/>
+        To add an author, type the author's name in the format 'Lastname, Firstname'.<br/>
+        If the author already exists, their name should appear as you type, in 
+        which case you can click them. <br/>
+        If the author does not exist, just type in the name and save it :)
       </p>
 
       {loading && <p className="help">Loading item...</p>}
@@ -174,6 +176,7 @@ export function EditItem() {
       {!loading && !loadError && !notFound && item && (
         <ItemForm
           key={formVersion}
+          mode="edit"
           initialValues={item}
           mediaTypes={mediaTypes}
           locations={locations}

@@ -17,6 +17,7 @@ export type ItemFormValues = {
   type_id: number | null;
   location_id: number | null;
   isbn: string;
+  // the flags are only editable in edit mode
   is_damaged: boolean;
   is_awol: boolean;
   is_retired: boolean;
@@ -35,32 +36,34 @@ type AuthorSuggestion = {
   name: string;
 };
 
-type ItemFormProps = {
+
+type ItemFormBaseProps = {
   initialValues: ItemFormValues;
   mediaTypes: DropdownOption[];
   locations: DropdownOption[];
-  // Read-only info shown for context but not editable on this form.
-  acquireDateDisplay: string;
-  retireDateDisplay: string;
   onSubmit: (values: ItemFormValues) => Promise<boolean>;
   submitLabel: string;
   submitting: boolean;
 };
 
-export function ItemForm({
-  initialValues,
-  mediaTypes,
-  locations,
-  acquireDateDisplay,
-  retireDateDisplay,
-  onSubmit,
-  submitLabel,
-  submitting,
-}: ItemFormProps) {
+export type ItemFormProps =
+  | (ItemFormBaseProps & {
+      mode: 'add';
+    })
+  | (ItemFormBaseProps & {
+      mode: 'edit';
+      // Read-only info shown for context but not editable on this form.
+      acquireDateDisplay: string;
+      retireDateDisplay: string;
+    });
+
+export function ItemForm(props: ItemFormProps) {
+  const { initialValues, mediaTypes, locations, onSubmit, submitLabel, submitting, mode } = props;
+  
   const [values, setValues] = useState<ItemFormValues>(initialValues);
   const [authorSuggestions, setAuthorSuggestions] = useState<AuthorSuggestion[]>([]);
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);  
-  const [isbnTouched, setIsbnTouched] = useState(false);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
   const authorBoxRef = useRef<HTMLDivElement>(null);
 
   // derived, not stored in state: is_borrowable is true exactly when none
@@ -128,35 +131,50 @@ export function ItemForm({
     setSuggestionsOpen(false);
   }
 
-  const isbnError =
-    isbnTouched && values.isbn.trim() !== '' && !isValidIsbn(values.isbn)
-      ? 'Not a valid ISBN-10 or ISBN-13.'
-      : null;
+  function handleSeriesNameChange(text: string) {
+    setValues((current) => ({
+      ...current,
+      series_name: text,
+      // Series Number only makes sense attached to a Series Name - if the
+      // name is cleared back to blank, drop any number that was typed too,
+      // so we never submit a "leftover" number with no series attached.
+      series_num: text.trim() === '' ? '' : current.series_num,
+    }));
+  }
 
+  const titleMissing = values.title.trim() === '';
   const authorMissing = values.author_id === null && values.author_name.trim() === '';
+  const typeMissing = values.type_id === null;
+  const locationMissing = values.location_id === null;
+  const isbnInvalid = values.isbn.trim() !== '' && !isValidIsbn(values.isbn);
+
+  const showTitleError = submitAttempted && titleMissing;
+  const showAuthorError = submitAttempted && authorMissing;
+  const showTypeError = submitAttempted && typeMissing;
+  const showLocationError = submitAttempted && locationMissing;
+  const showIsbnError = submitAttempted && isbnInvalid;
+
+
   const canSubmit =
-    !submitting &&
-    values.title.trim() !== '' &&
-    !authorMissing &&
-    values.type_id !== null &&
-    values.location_id !== null &&
-    !isbnError;
+    !submitting && !titleMissing && !authorMissing && !typeMissing && !locationMissing && !isbnInvalid;
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    setIsbnTouched(true);
+    setSubmitAttempted(true);
     if (!canSubmit) {
       return;
     }
     await onSubmit(values);
   }
+  
+  const showSeriesNum = values.series_name.trim() !== '';
 
   return (
     <form onSubmit={handleSubmit}>
       <table>
         <tbody>
           <tr>
-            <td><label htmlFor="item-title">Title</label></td>
+            <td className='required'><label htmlFor="item-title">Title</label></td>
             <td>
               <input
                 id="item-title"
@@ -164,13 +182,13 @@ export function ItemForm({
                 size={40}
                 value={values.title}
                 onChange={(event) => setValues((current) => ({ ...current, title: event.target.value }))}
-                required
               />
+              {showTitleError && <p className="error">Title is required.</p>}
             </td>
           </tr>
 
           <tr>
-            <td><label htmlFor="item-author">Author</label></td>
+            <td className='required'><label htmlFor="item-author">Author</label></td>
             <td>
               <div ref={authorBoxRef} style={{ position: 'relative' }}>
                 <input
@@ -182,7 +200,6 @@ export function ItemForm({
                   onFocus={() => setSuggestionsOpen(true)}
                   placeholder="Start typing to search existing authors..."
                   autoComplete="off"
-                  required
                 />
                 {visibleSuggestions.length > 0 && (
                   <ul
@@ -212,7 +229,7 @@ export function ItemForm({
                   </ul>
                 )}
               </div>
-              {authorMissing && <p className="error">Author is required.</p>}
+              {showAuthorError && <p className="error">Author is required.</p>}              
               <p className="help">
                 If the author isn't listed, just finish typing their full name in the form Lastname, Firstname
               </p>
@@ -227,29 +244,29 @@ export function ItemForm({
                 type="text"
                 size={30}
                 value={values.series_name}
-                onChange={(event) => setValues((current) => ({ ...current, series_name: event.target.value }))}
-                placeholder="(optional)"
+                onChange={(event) => handleSeriesNameChange(event.target.value)}
               />
             </td>
           </tr>
 
-          {/* TODO: Only show series num if series is not blank */}
-          <tr>
-            <td><label htmlFor="item-series-num">Series #</label></td>
-            <td>
-              <input
-                id="item-series-num"
-                type="text"
-                size={5}
-                value={values.series_num}
-                onChange={(event) => setValues((current) => ({ ...current, series_num: event.target.value }))}
-                placeholder="(optional)"
-              />
-            </td>
-          </tr>
+          {showSeriesNum && (
+            <tr>
+              <td><label htmlFor="item-series-num">Series #</label></td>
+              <td>
+                <input
+                  id="item-series-num"
+                  type="text"
+                  size={10}
+                  value={values.series_num}
+                  onChange={(event) => setValues((current) => ({ ...current, series_num: event.target.value }))}
+                  placeholder="e.g. 1, 2, 3.5, Special Edition"
+                />
+              </td>
+            </tr>
+          )}
 
           <tr>
-            <td><label htmlFor="item-type">Type</label></td>
+            <td className='required'><label htmlFor="item-type">Type</label></td>
             <td>
               <select
                 id="item-type"
@@ -257,18 +274,18 @@ export function ItemForm({
                 onChange={(event) =>
                   setValues((current) => ({ ...current, type_id: Number(event.target.value) }))
                 }
-                required
               >
                 <option value="" disabled>Select a type...</option>
                 {mediaTypes.map((option) => (
                   <option key={option.id} value={option.id}>{option.name}</option>
                 ))}
               </select>
+              {showTypeError && <p className="error">Type is required.</p>}
             </td>
           </tr>
 
           <tr>
-            <td><label htmlFor="item-location">Location</label></td>
+            <td className='required'><label htmlFor="item-location">Location</label></td>
             <td>
               <select
                 id="item-location"
@@ -276,13 +293,13 @@ export function ItemForm({
                 onChange={(event) =>
                   setValues((current) => ({ ...current, location_id: Number(event.target.value) }))
                 }
-                required
               >
                 <option value="" disabled>Select a location...</option>
                 {locations.map((option) => (
                   <option key={option.id} value={option.id}>{option.name}</option>
                 ))}
               </select>
+              {showLocationError && <p className="error">Location is required.</p>}
             </td>
           </tr>
 
@@ -295,69 +312,64 @@ export function ItemForm({
                 size={20}
                 value={values.isbn}
                 onChange={(event) => setValues((current) => ({ ...current, isbn: event.target.value }))}
-                onBlur={() => setIsbnTouched(true)}
-                placeholder="(optional)"
               />
-              {isbnError && <p className="error">{isbnError}</p>}
-            </td>
+              {showIsbnError && <p className="error">Not a valid ISBN-10 or ISBN-13.</p>}            </td>
           </tr>
-
-          <tr>
-            <td>Status</td>
-            <td>
-              <label>
-                <input type="checkbox" checked={isBorrowable} disabled readOnly />
-                {' '}Borrowable <span className="help">(computed automatically)</span>
-              </label>
-              <br/>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={values.is_damaged}
-                  onChange={(event) =>
-                    setValues((current) => ({ ...current, is_damaged: event.target.checked }))
-                  }
-                />
-                {' '}Damaged
-              </label>
-              <br/>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={values.is_awol}
-                  onChange={(event) =>
-                    setValues((current) => ({ ...current, is_awol: event.target.checked }))
-                  }
-                />
-                {' '}AWOL
-              </label>
-              <br/>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={values.is_retired}
-                  onChange={(event) =>
-                    setValues((current) => ({ ...current, is_retired: event.target.checked }))
-                  } 
-                />
-                {' '}Retired
-              </label>
-            </td>
-          </tr>
-
-          <tr>
-            <td>Acquire Date</td>
-            <td>{acquireDateDisplay || <span className="help">(not recorded)</span>}</td>
-          </tr>
-
-          <tr>
-            <td>Retire Date</td>
-            <td>
-              {values.is_retired
-                ? (retireDateDisplay || <span className="help">(will be set to today on save)</span>)
-                : <span className="help">(not retired)</span>}
-            </td>
-          </tr>
+        
+      {mode === 'edit' && (
+            <>
+              <tr>
+                <td>Borrowable</td>
+                <td>
+                  <input type="checkbox" checked={isBorrowable} disabled readOnly />
+                  <span className="help"> (computed automatically from the statuses below)</span>
+                </td>
+              </tr>
+              <tr>
+                <td><label htmlFor="item-damaged">Damaged</label></td>
+                <td>
+                  <input
+                    id="item-damaged"
+                    type="checkbox"
+                    checked={values.is_damaged}
+                    onChange={(event) => setValues((current) => ({ ...current, is_damaged: event.target.checked }))}
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td><label htmlFor="item-awol">AWOL</label></td>
+                <td>
+                  <input
+                    id="item-awol"
+                    type="checkbox"
+                    checked={values.is_awol}
+                    onChange={(event) => setValues((current) => ({ ...current, is_awol: event.target.checked }))}
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td><label htmlFor="item-retired">Retired</label></td>
+                <td>
+                  <input
+                    id="item-retired"
+                    type="checkbox"
+                    checked={values.is_retired}
+                    onChange={(event) => setValues((current) => ({ ...current, is_retired: event.target.checked }))}
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td>Acquire Date</td>
+                <td>{props.acquireDateDisplay}</td>
+              </tr>
+              {values.is_retired && (
+                <tr>
+                  <td>Retire Date</td>
+                  <td>{props.retireDateDisplay}</td>
+                </tr>
+              )}
+            </>
+          )}
 
           <tr>
             <td><label htmlFor="item-donated-by">Donated By</label></td>
@@ -368,7 +380,6 @@ export function ItemForm({
                 size={30}
                 value={values.donated_by}
                 onChange={(event) => setValues((current) => ({ ...current, donated_by: event.target.value }))}
-                placeholder="(optional)"
               />
             </td>
           </tr>
@@ -402,7 +413,7 @@ export function ItemForm({
       </table>
 
       <br/>
-      <button type="submit" disabled={!canSubmit}>{submitLabel}</button>
+      <button type="submit" disabled={submitting}>{submitLabel}</button>
     </form>
   );
 }

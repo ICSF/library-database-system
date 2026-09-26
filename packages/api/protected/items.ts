@@ -33,10 +33,7 @@ const itemUpdateInput = z.object({
   series_num: z.string().trim().nullable(),
   type_id: z.number().int().positive(),
   location_id: z.number().int().positive(),
-  isbn: z
-    .string()
-    .trim()
-    .nullable(),
+  isbn: z.string().trim().nullable(),
   is_damaged: z.boolean(),
   is_awol: z.boolean(),
   is_retired: z.boolean(),
@@ -44,6 +41,55 @@ const itemUpdateInput = z.object({
   comments: z.string().nullable(),
   reviews: z.string().nullable(),
 });
+
+const itemCreateInput = z.object({
+  title: z.string().trim().min(1, 'Title is required.'),
+  author_id: z.number().int().positive().nullable(),
+  author_name: z.string().trim().min(1, 'Author is required.'),
+  series_name: z.string().trim().nullable(),
+  series_num: z.string().trim().nullable(),
+  type_id: z.number().int().positive(),
+  location_id: z.number().int().positive(),
+  isbn: z.string().trim().nullable(),
+  donated_by: z.string().trim().nullable(),
+  comments: z.string().nullable(),
+  reviews: z.string().nullable(),
+});
+
+// Shared by itemUpdate and itemCreate: given a client-supplied author_id
+// (may be null) and author_name, returns a definite author_id to write to
+// items.author_id - either the id the user picked from the autocomplete,
+// or a case-insensitive exact-name match against an existing author, or
+// a brand-new authors row. Must be run inside the same transaction as the items 
+// write, so a concurrent duplicate-name create can't slip in between 
+// the lookup and the item write.
+async function resolveAuthorId(
+  tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
+  authorId: number | null,
+  authorName: string,
+): Promise<number> {
+  if (authorId !== null) {
+    return authorId;
+  }
+
+  const trimmedName = authorName.trim();
+
+  const existing = await tx.authors.findFirst({
+    where: { name: { equals: trimmedName, mode: 'insensitive' } },
+    select: { author_id: true },
+  });
+
+  if (existing) {
+    return existing.author_id;
+  }
+
+  const created = await tx.authors.create({
+    data: { name: trimmedName },
+    select: { author_id: true },
+  });
+
+  return created.author_id;
+}
 
 export const itemsRouter = router({
   // Returns a single page of items, optionally filtered by a search term
@@ -134,9 +180,9 @@ export const itemsRouter = router({
           locations: { select: { name: true } },
         },
       });
-      
+
       if (!row) return null;
-      
+
       return {
         item_id: row.item_id,
         title: row.title,
@@ -203,67 +249,58 @@ export const itemsRouter = router({
   // Creates or finds an author if the author_id wasn't supplied
   // Updates retire date if the retired flag is set
   itemUpdate: protectedProcedure.input(itemUpdateInput).mutation(async ({ input }) => {
-    const { item_id, author_id, author_name, is_damaged, is_awol, is_retired, ...rest } = input;
-
     try {
       const updated = await prisma.$transaction(async (tx) => {
-        const current = await tx.items.findUnique({
-          where: { item_id },
-          select: { is_retired: true },
+        const existing = await tx.items.findUnique({
+          where: { item_id: input.item_id },
+          select: { is_retired: true, retire_date: true },
         });
 
-        if (!current) {
+        if (!existing) {
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Item not found.' });
         }
 
-        // --- Resolve author -------------------------------------------------
-        let resolvedAuthorId = author_id;
+        const authorId = await resolveAuthorId(tx, input.author_id, input.author_name);
 
-        if (resolvedAuthorId === null) {
-          const existingAuthor = await tx.authors.findFirst({
-            where: { name: { equals: author_name, mode: 'insensitive' } },
-            select: { author_id: true },
-          });
-
-          resolvedAuthorId = existingAuthor
-            ? existingAuthor.author_id
-            : (await tx.authors.create({ data: { name: author_name } })).author_id;
-        }
-
-        // --- Resolve retire_date ---------------------------------------------
-        let retireDateUpdate: Date | null | undefined;
-        if (!current.is_retired && is_retired) {
-          retireDateUpdate = new Date(); // false -> true: stamp today
-        } else if (!is_retired) {
-          retireDateUpdate = null; // -> false: always clear
+        let retireDate: Date | null;
+        if (input.is_retired && !existing.is_retired) {
+          // false -> true: stamp today.
+          retireDate = new Date();
+        } else if (!input.is_retired) {
+          // -> false: always clear.
+          retireDate = null;
         } else {
-          retireDateUpdate = undefined; // true -> true: leave untouched
+          // true -> true: leave whatever was already there.
+          retireDate = existing.retire_date;
         }
 
-        // --- Resolve is_borrowable --------------------------------------------
-        const isBorrowable = !is_damaged && !is_awol && !is_retired;
+        const isBorrowable = !input.is_damaged && !input.is_awol && !input.is_retired;
 
-        return tx.items.update({
-          where: { item_id },
+        const row = await tx.items.update({
+          where: { item_id: input.item_id },
           data: {
-            title: rest.title,
-            author_id: resolvedAuthorId,
-            series: rest.series_name,
-            series_num: rest.series_num,
-            type_id: rest.type_id,
-            location_id: rest.location_id,
-            isbn: rest.isbn,
-            is_damaged,
-            is_awol,
-            is_retired,
+            title: input.title,
+            author_id: authorId,
+            series: input.series_name,
+            series_num: input.series_num,
+            type_id: input.type_id,
+            location_id: input.location_id,
+            isbn: input.isbn,
+            is_damaged: input.is_damaged,
+            is_awol: input.is_awol,
+            is_retired: input.is_retired,
             is_borrowable: isBorrowable,
-            donated_by: rest.donated_by,
-            comments: rest.comments,
-            reviews: rest.reviews,
-            ...(retireDateUpdate !== undefined ? { retire_date: retireDateUpdate } : {}),
+            retire_date: retireDate,
+            donated_by: input.donated_by,
+            comments: input.comments,
+            reviews: input.reviews,
           },
-          include: { authors: true },
+          include: {
+            authors: { select: { name: true } },
+          },
         });
+
+        return row;
       });
 
       return {
@@ -276,10 +313,10 @@ export const itemsRouter = router({
         type_id: updated.type_id,
         location_id: updated.location_id,
         isbn: updated.isbn,
+        is_borrowable: updated.is_borrowable,
         is_damaged: updated.is_damaged,
         is_awol: updated.is_awol,
         is_retired: updated.is_retired,
-        is_borrowable: updated.is_borrowable,
         retire_date: updated.retire_date ? updated.retire_date.toISOString() : null,
         acquire_date: updated.acquire_date ? updated.acquire_date.toISOString() : null,
         donated_by: updated.donated_by,
@@ -290,7 +327,7 @@ export const itemsRouter = router({
       if (err instanceof TRPCError) {
         throw err;
       }
-      console.error('[itemUpdate] mutation failed:', err);
+      console.error('[items] itemUpdate mutation failed:', err);
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
         message: 'Unable to update item',
@@ -299,5 +336,71 @@ export const itemsRouter = router({
     }
   }),
 
+  // Creates a brand-new item. Same author find-or-create logic as
+  // itemUpdate, but there's no status/retire_date handling to do at all -
+  // a new item always starts out Borrowable (is_damaged/is_awol/is_retired
+  // all false, is_borrowable true, retire_date null), with today recorded
+  // as its acquire_date.
+  itemCreate: protectedProcedure.input(itemCreateInput).mutation(async ({ input }) => {
+    try {
+      const created = await prisma.$transaction(async (tx) => {
+        const authorId = await resolveAuthorId(tx, input.author_id, input.author_name);
+
+        const row = await tx.items.create({
+          data: {
+            title: input.title,
+            author_id: authorId,
+            series: input.series_name,
+            series_num: input.series_num,
+            type_id: input.type_id,
+            location_id: input.location_id,
+            isbn: input.isbn,
+            is_damaged: false,
+            is_awol: false,
+            is_retired: false,
+            is_borrowable: true,
+            retire_date: null,
+            acquire_date: new Date(),
+            donated_by: input.donated_by,
+            comments: input.comments,
+            reviews: input.reviews,
+          },
+          include: {
+            authors: { select: { name: true } },
+          },
+        });
+
+        return row;
+      });
+
+      return {
+        item_id: created.item_id,
+        title: created.title,
+        author_id: created.author_id,
+        author_name: created.authors.name,
+        series_name: created.series,
+        series_num: created.series_num,
+        type_id: created.type_id,
+        location_id: created.location_id,
+        isbn: created.isbn,
+        is_borrowable: created.is_borrowable,
+        is_damaged: created.is_damaged,
+        is_awol: created.is_awol,
+        is_retired: created.is_retired,
+        retire_date: created.retire_date ? created.retire_date.toISOString() : null,
+        acquire_date: created.acquire_date ? created.acquire_date.toISOString() : null,
+        donated_by: created.donated_by,
+        comments: created.comments,
+        reviews: created.reviews,
+      };
+    } catch (err) {
+      console.error('[items] itemCreate mutation failed:', err);
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Unable to create item',
+        cause: err,
+      });
+    }
+  }),
 
 });
