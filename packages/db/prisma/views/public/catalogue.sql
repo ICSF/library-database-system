@@ -1,7 +1,6 @@
 SELECT
   items.item_id,
   items.title,
-  items.author_id,
   authors.name AS author_name,
   items.series AS series_name,
   items.series_num,

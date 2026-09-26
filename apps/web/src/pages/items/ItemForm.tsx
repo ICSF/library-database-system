@@ -8,7 +8,7 @@ const AUTHOR_SEARCH_DEBOUNCE_MS = 250;
 export type ItemFormValues = {
   title: string;
   // author_id is chosen from the autocomplete suggestion list. author_name is always the 
-  // text currently shown in the input. If the user types a name WITHOUT picking a suggestion,
+  // text currently shown in the input. If the user types a name without picking a suggestion,
   // author_id is cleared back to null and the backend does a find-or-create by name on save (see itemUpdate).
   author_id: number | null;
   author_name: string;
