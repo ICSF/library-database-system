@@ -4,6 +4,19 @@ import { trpc } from '../../lib/TRPC';
 import { useAuth } from '../../auth/useAuth';
 import { formatSeries, formatDate, getStatusBadges, type ItemDetail } from './ItemsUtils';
 
+// dynamically calculate bg of row depending on how many fields visible
+function rowClass(index: number): string {
+  if (index === 0) {
+    return 'bg1';
+  }
+  return index % 2 === 1 ? 'bg2' : 'bg3';
+}
+
+type DetailRow = {
+  label: string;
+  value: React.ReactNode;
+  show?: boolean;
+};
 
 export function ViewItem() {
   const { itemId } = useParams<{ itemId: string }>();
@@ -60,6 +73,25 @@ export function ViewItem() {
     };
   }, [itemId]);
 
+  const rows: DetailRow[] = item
+    ? [
+        { label: 'Title', value: item.title },
+        { label: 'Author', value: item.author_name },
+        { label: 'Series', value: formatSeries(item.series_name, item.series_num) },
+        { label: 'Type', value: item.item_type },
+        { label: 'Location', value: item.location },
+        { label: 'ISBN', value: item.isbn ?? '' },
+        { label: 'Status', value: getStatusBadges(item).join(', ') },
+        { label: 'Acquire Date', value: formatDate(item.acquire_date) },
+        { label: 'Retire Date', value: formatDate(item.retire_date), show: item.is_retired },
+        { label: 'Donated By', value: item.donated_by ?? '' },
+        { label: 'Comments', value: item.comments ?? '' },
+        { label: 'Reviews', value: item.reviews ?? '' },
+      ]
+    : [];
+
+  const visibleRows = rows.filter((row) => row.show !== false);
+
   return (
     <>
       <h1>Item Details</h1>
@@ -75,54 +107,12 @@ export function ViewItem() {
         <>
           <table className="list" width="99%">
             <tbody>
-              <tr className="bg1">
-                <th>Title</th>
-                <td>{item.title}</td>
-              </tr>
-              <tr className="bg2">
-                <th>Author</th>
-                <td>{item.author_name}</td>
-              </tr>
-              <tr className="bg3">
-                <th>Series</th>
-                <td>{formatSeries(item.series_name, item.series_num)}</td>
-              </tr>
-              <tr className="bg2">
-                <th>Type</th>
-                <td>{item.item_type}</td>
-              </tr>
-              <tr className="bg3">
-                <th>Location</th>
-                <td>{item.location}</td>
-              </tr>
-              <tr className="bg2">
-                <th>ISBN</th>
-                <td>{item.isbn ?? ''}</td>
-              </tr>
-              <tr className="bg3">
-                <th>Status</th>
-                <td>{getStatusBadges(item).join(', ')}</td>
-              </tr>
-              <tr className="bg2">
-                <th>Acquire Date</th>
-                <td>{formatDate(item.acquire_date)}</td>
-              </tr>
-              <tr className="bg3">
-                <th>Retire Date</th>
-                <td>{formatDate(item.retire_date)}</td>
-              </tr>
-              <tr className="bg2">
-                <th>Donated By</th>
-                <td>{item.donated_by ?? ''}</td>
-              </tr>
-              <tr className="bg3">
-                <th>Comments</th>
-                <td>{item.comments ?? ''}</td>
-              </tr>
-              <tr className="bg2">
-                <th>Reviews</th>
-                <td>{item.reviews ?? ''}</td>
-              </tr>
+              {visibleRows.map((row, index) => (
+                <tr className={rowClass(index)} key={row.label}>
+                  <th>{row.label}</th>
+                  <td>{row.value}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
 
