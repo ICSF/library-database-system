@@ -90,7 +90,7 @@ export function ItemSearch() {
         Here, you can search for specific items.<br/>
         The status of an item is shown as one or more badges: Borrowable, Damaged, AWOL, and/or Retired.<br/>
         Click 'View' to see full item details. <br/>
-        Click 'Loan' to issue or return a loan <br/>
+        Click 'Loan' to manage item loans (issue, return, renew) <br/>
         If you are Head Librarian, you can click 'Edit' to edit item details
       </p>
 

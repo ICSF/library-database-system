@@ -16,7 +16,7 @@ const loanCreateInput = z.object({
   notes: z.string().trim().nullable(),
 });
 
-const loanReturnInput = z.object({
+const loanManageInput = z.object({
   loan_id: z.string().trim().min(1),
 });
 
@@ -247,7 +247,10 @@ export const loansRouter = router({
 
   // marks a loan as returned (sets returned_at and returned_by)
   loanReturn: protectedProcedure
-    .input(loanReturnInput)
+    .input(loanManageInput
+    
+    
+    )
     .mutation(async ({ input, ctx }) => {
       let loanId: bigint;
 
@@ -290,5 +293,58 @@ export const loansRouter = router({
           cause: err,
         });
       }
+    }),
+
+    loanRenew: protectedProcedure
+        .input(loanManageInput)
+        .mutation(async ({ input }) => {
+          const loanId = BigInt(input.loan_id);
+        
+          try {
+            const openLoan = await prisma.loans.findFirst({
+              where: { loan_id: loanId, returned_at: null },
+              select: { due_at: true },
+            });
+        
+            if (!openLoan) {
+              throw new TRPCError({
+                code: 'CONFLICT',
+                message: 'This loan is no longer open (it may have already been returned).',
+              });
+            }
+        
+            const newDueAt = new Date(openLoan.due_at);
+            newDueAt.setDate(newDueAt.getDate() + LOAN_LENGTH_DAYS);
+        
+            // Guarded on returned_at IS NULL again here, in case it was returned
+            // in the moment between the check above and this write.
+            const { count } = await prisma.loans.updateMany({
+              where: { loan_id: loanId, returned_at: null },
+              data: {
+                due_at: newDueAt,
+                times_renewed: { increment: 1 },
+              },
+            });
+        
+            if (count === 0) {
+              throw new TRPCError({
+                code: 'CONFLICT',
+                message: 'This loan is no longer open (it may have already been returned).',
+              });
+            }
+        
+            return { due_at: newDueAt.toISOString() };
+          } catch (err) {
+            if (err instanceof TRPCError) {
+              throw err;
+            }
+        
+            console.error('[loanRenew] db mutation failed:', err);
+            throw new TRPCError({
+              code: 'INTERNAL_SERVER_ERROR',
+              message: 'Failed to renew loan.',
+              cause: err,
+            });
+          }
     }),
 });

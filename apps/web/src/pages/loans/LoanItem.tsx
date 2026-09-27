@@ -80,6 +80,9 @@ export function LoanItem() {
   const [returnStatus, setReturnStatus] = useState<'idle' | 'returning' | 'error'>('idle');
   const [returnErrorMessage, setReturnErrorMessage] = useState<string | null>(null);
 
+  const [renewStatus, setRenewStatus] = useState<'idle' | 'renewing' | 'error'>('idle');
+  const [renewErrorMessage, setRenewErrorMessage] = useState<string | null>(null);
+
   useEffect(() => {
     let isCurrent = true;
 
@@ -267,6 +270,27 @@ export function LoanItem() {
     }
   }
 
+  async function handleRenew() {
+    if (loanStatus?.onLoan !== true) {
+      return;
+    }
+
+    setRenewStatus('renewing');
+    setRenewErrorMessage(null);
+
+    try {
+      await trpc.loanRenew.mutate({ loan_id: loanStatus.loan_id });
+      setRefreshKey((key) => key + 1);
+      setRenewStatus('idle');
+    } catch (error) {
+      console.error('Failed to renew loan:', error);
+      setRenewStatus('error');
+      setRenewErrorMessage(
+        error instanceof TRPCClientError ? error.message : 'Unable to renew loan.',
+      );
+    }
+  }
+
   const loanRows =
     loanStatus && loanStatus.onLoan && item
       ? [
@@ -286,6 +310,11 @@ export function LoanItem() {
   return (
     <>
       <h1>Loan/Return Item</h1>
+      <p className='help'>
+        Here, you can loan items, or return/renew items if they are already loaned. <br/>
+        Loans will be due 28 days from the date of issuing, after which they will be classed as overdue/will need to be renewed <br/>
+        If someone knows they cannot give something back within 28 days, you can click 'renew' a few times to extend the due date.
+      </p>
       <p className="help">
         {location?.state?.from === 'returns' ? (
           <Link to="/portal/loans/search">&lt;= Back to loans search</Link>
@@ -327,6 +356,14 @@ export function LoanItem() {
               >
                 {returnStatus === 'returning' ? 'Returning...' : 'Mark as Returned'}
               </button>
+              <button
+                type="button"
+                onClick={handleRenew}
+                disabled={renewStatus === 'renewing'}
+              >
+                {renewStatus === 'renewing' ? 'Renewing...' : 'Renew'}
+              </button>
+              {renewStatus === 'error' && <p className="error">{renewErrorMessage}</p>}
 
             </>
           ) : (
