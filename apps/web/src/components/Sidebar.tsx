@@ -61,29 +61,29 @@ export function Sidebar() {
                         </td>
                     </tr>
                     {/* Disabled Accounts */}
-                    <tr>
+                    {/*<tr>
                         <td>
                             <Link to="/portal/reports/disabled_members">
                                 Disabled Accounts
                             </Link>
                         </td>
-                    </tr>
+                    </tr>*/}
                     {/* View Overdue Loans */}
-                    <tr>
+                    {/*<tr>
                         <td>
                             <Link to="/portal/reports/items_overdue">
                                 View Overdues
                             </Link>
                         </td>
-                    </tr>
+                    </tr>*/}
                     {/* Recent Borrowing Activity */}
-                    <tr>
+                    {/*<tr>
                         <td>
                             <Link to="/portal/reports/recent_activity">
                                 Recent Activity
                             </Link>
                         </td>
-                    </tr>
+                    </tr>*/}
                 </tbody>
             </table>
             <br />
