@@ -127,6 +127,7 @@ export function EditMember() {
       <p className="help">
         Here, you can edit member details. Disabling a member means that they are banned from borrowing books, for whatever reason. <br/>
       </p>
+      <p className='help'><Link to="/portal/members/search">&lt;= Back to Members List</Link></p>
       {renewStatus === 'success' && member && <p className="info">{member.first_name} {member.last_name} renewed successfully.</p>}
       {renewStatus === 'already_current' && member && (
         <p className="error">{member.first_name} {member.last_name} is already a member this year.</p>
@@ -148,7 +149,6 @@ export function EditMember() {
           onRenew={isCurrentMember ? undefined : handleRenew}
         />
       )}
-      <p><Link to="/portal/members/search">Cancel</Link></p>
     </>
   );
 }
