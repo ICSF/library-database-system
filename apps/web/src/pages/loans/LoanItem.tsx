@@ -353,9 +353,11 @@ export function LoanItem() {
                 type="button"
                 onClick={handleReturn}
                 disabled={returnStatus === 'returning'}
+                style={{ marginRight: '12px' }}
               >
                 {returnStatus === 'returning' ? 'Returning...' : 'Mark as Returned'}
               </button>
+
               <button
                 type="button"
                 onClick={handleRenew}
