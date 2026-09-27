@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { TRPCClientError } from '@trpc/client';
 import { trpc } from '../../lib/TRPC';
 import { formatDate, type ItemDetail } from './ItemsUtils'
@@ -46,7 +46,6 @@ function rowClass(index: number): string {
 
 export function LoanItem() {
   const { itemId } = useParams<{ itemId: string }>();
-  const navigate = useNavigate();
 
   const [item, setItem] = useState<ItemDetail | null>(null);
   const [loanStatus, setLoanStatus] = useState<LoanStatus | null>(null);
@@ -54,6 +53,9 @@ export function LoanItem() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [notFound, setNotFound] = useState(false);
+
+  // bumped after a successful loan/return so that the page shows the loan table/issue form 
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Member autocomplete - submit button disabled until member clicked
   const [memberQuery, setMemberQuery] = useState('');
@@ -66,6 +68,9 @@ export function LoanItem() {
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'submitting' | 'error'>('idle');
   const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(null);
+
+  const [returnStatus, setReturnStatus] = useState<'idle' | 'returning' | 'error'>('idle');
+  const [returnErrorMessage, setReturnErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let isCurrent = true;
@@ -118,12 +123,9 @@ export function LoanItem() {
     return () => {
       isCurrent = false;
     };
-  }, [itemId]);
+  }, [itemId, refreshKey]);
 
-  // Debounced member search-as-you-type. Only setState calls inside the
-  // setTimeout callback - nothing synchronous in the effect body itself
-  // (see the earlier "setState synchronously within an effect" fix on
-  // ItemForm's author search for why this matters).
+  // Debounced member search-as-you-type
   const trimmedQuery = memberQuery.trim();
 
   useEffect(() => {
@@ -212,14 +214,41 @@ export function LoanItem() {
         notes: notes.trim() === '' ? null : notes.trim(),
       });
 
-      // Nothing more to do on this page once the loan is issued - send
-      // the user back to the item search page
-      navigate(`/portal/items/search`);
+      // Refresh page to show loan table info
+      setSubmitStatus('idle');
+      setSubmitAttempted(false);
+      setMemberId(null);
+      setMemberQuery('');
+      setNotes('');
+      setRefreshKey((key) => key + 1);
     } catch (error) {
       console.error('Failed to create loan:', error);
       setSubmitStatus('error');
       setSubmitErrorMessage(
         error instanceof TRPCClientError ? error.message : 'Unable to issue loan.',
+      );
+    }
+  }
+
+  async function handleReturn() {
+    if (!loanStatus || !loanStatus.onLoan || returnStatus === 'returning') {
+      return;
+    }
+
+    setReturnStatus('returning');
+    setReturnErrorMessage(null);
+
+    try {
+      await trpc.loanReturn.mutate({ loan_id: loanStatus.loan_id });
+
+      // Re-run the data-loading effect so the page flips from "on loan"
+      setReturnStatus('idle');
+      setRefreshKey((key) => key + 1);
+    } catch (error) {
+      console.error('Failed to return item:', error);
+      setReturnStatus('error');
+      setReturnErrorMessage(
+        error instanceof TRPCClientError ? error.message : 'Unable to return item.',
       );
     }
   }
@@ -236,6 +265,8 @@ export function LoanItem() {
           { label: 'Notes', value: loanStatus.notes ?? '', show: !!loanStatus.notes },
         ].filter((row) => row.show !== false)
       : [];
+
+  const visibleLoanRows = loanRows.filter((row) => row.show !== false);
 
   return (
     <>
@@ -255,9 +286,11 @@ export function LoanItem() {
               <p className="help">
                 This item is currently on loan
               </p>
+              {returnStatus === 'error' && <p className="error">{returnErrorMessage}</p>}
+
               <table className="list" width="99%">
                 <tbody>
-                  {loanRows.map((row, index) => (
+                  {visibleLoanRows.map((row, index) => (
                     <tr className={rowClass(index)} key={row.label}>
                       <th>{row.label}</th>
                       <td>{row.value}</td>
@@ -265,8 +298,23 @@ export function LoanItem() {
                   ))}
                 </tbody>
               </table>
+
+              <br/>
+
+              <button
+                type="button"
+                onClick={handleReturn}
+                disabled={returnStatus === 'returning'}
+              >
+                {returnStatus === 'returning' ? 'Returning...' : 'Mark as Returned'}
+              </button>
+
             </>
           ) : (
+            <>
+            <p className='help'>
+                {item.title} - {item.author_name}
+            </p>
             <form onSubmit={handleSubmit}>
               <table>
                 <tbody>
@@ -358,6 +406,7 @@ export function LoanItem() {
                 </tbody>
               </table>
             </form>
+            </>
           )}
         </>
       )}

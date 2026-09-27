@@ -15,6 +15,10 @@ const loanCreateInput = z.object({
   notes: z.string().trim().nullable(),
 });
 
+const loanReturnInput = z.object({
+  loan_id: z.string().trim().min(1),
+});
+
 // due date computed server side
 function computeDueDate(): Date {
   const due = new Date();
@@ -146,6 +150,53 @@ export const loansRouter = router({
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to issue loan.',
+          cause: err,
+        });
+      }
+    }),
+
+  // marks a loan as returned (sets returned_at and returned_by)
+  loanReturn: protectedProcedure
+    .input(loanReturnInput)
+    .mutation(async ({ input, ctx }) => {
+      let loanId: bigint;
+
+      try {
+        loanId = BigInt(input.loan_id);
+      } catch {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Invalid loan id.',
+        });
+      }
+
+      try {
+        const { count } = await prisma.loans.updateMany({
+          where: { loan_id: loanId, returned_at: null },
+          data: {
+            returned_at: new Date(),
+            returned_by: ctx.user.id,
+          },
+        });
+
+        // db conflict
+        if (count === 0) {
+          throw new TRPCError({
+            code: 'CONFLICT',
+            message: 'This loan has already been returned.',
+          });
+        }
+
+        return { success: true as const };
+      } catch (err) {
+        if (err instanceof TRPCError) {
+          throw err;
+        }
+
+        console.error('[loanReturn] db mutation failed:', err);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to return item.',
           cause: err,
         });
       }

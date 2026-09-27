@@ -27,8 +27,16 @@ export function Sidebar() {
                     {/* Issue Loan */}
                     <tr>
                         <td>
-                            <Link to="/portal/loans/loan" accessKey='l'>
-                                <u>L</u>oans (Issue, Return)
+                            <Link to="/portal/items/search">
+                                 Issue Loans
+                            </Link>
+                        </td>
+                    </tr>
+                    {/* Return Loan */}
+                    <tr>
+                        <td>
+                            <Link to="/portal/loans/search">
+                                 Return Loans
                             </Link>
                         </td>
                     </tr>
