@@ -76,9 +76,7 @@ function App() {
           { profile?.isHead &&
             <Route path="items/add" element={<AddItem />} />
           }
-           { profile?.isHead &&
-            <Route path="items/loan/:itemId" element={<LoanItem />} />
-          }
+          <Route path="items/loan/:itemId" element={<LoanItem />} />
           {/* more protected /portal/* routes go here as the app grows */}
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
