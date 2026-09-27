@@ -89,7 +89,9 @@ export function ItemSearch() {
       <p className="help">
         Here, you can search for specific items.<br/>
         The status of an item is shown as one or more badges: Borrowable, Damaged, AWOL, and/or Retired.<br/>
-        Click 'View' to see full item details.
+        Click 'View' to see full item details. <br/>
+        Click 'Loan' to issue or return a loan <br/>
+        If you are Head Librarian, you can click 'Edit' to edit item details
       </p>
 
       <form>
@@ -140,7 +142,10 @@ export function ItemSearch() {
               <td>{item.location}</td>
               <td>{getStatusBadges(item).join(', ')}</td>
               <td>
-                <Link to={`/portal/items/view/${item.item_id}`}>View</Link>
+                <>
+                <Link to={`/portal/items/view/${item.item_id}`}>View</Link> <br/>
+                <Link to={`/portal/items/loan/${item.item_id}`}>Loan</Link>
+                </>
                 {profile?.isHead ? (
                   <>
                     <br/>

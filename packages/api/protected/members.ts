@@ -3,6 +3,8 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { protectedProcedure, router } from '../context.js';
 
+const MEMBER_SEARCH_LIMIT = 10;
+
 async function getCurrentMembershipYear(client: Pick<PrismaClient, 'membership_settings'>): Promise<number> {
   const settings = await client.membership_settings.findUnique({
     where: { singleton: true },
@@ -189,6 +191,50 @@ export const membersRouter = router({
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to load members.',
+          cause: err,
+        });
+      }
+    }),
+
+  // Debounced autocomplete search for the loan form - restricted to CURRENT members only 
+  memberSearch: protectedProcedure
+    .input(z.object({ search: z.string().trim().min(1) }))
+    .query(async ({ input }) => {
+      try {
+        const members = await prisma.current_members.findMany({
+          where: {
+            OR: [
+              { first_name: { contains: input.search, mode: 'insensitive' } },
+              { last_name: { contains: input.search, mode: 'insensitive' } },
+              { email: { contains: input.search, mode: 'insensitive' } },
+            ],
+          },
+          select: {
+            member_id: true,
+            first_name: true,
+            last_name: true,
+            email: true,
+          },
+          orderBy: [{ last_name: 'asc' }, { first_name: 'asc' }],
+          take: MEMBER_SEARCH_LIMIT,
+        });
+
+        return members
+          .filter((member): member is typeof member & { member_id: string } => member.member_id !== null)
+          .map((member) => ({
+            member_id: member.member_id,
+            name: `${member.first_name ?? ''} ${member.last_name ?? ''}`.trim(),
+            email: member.email,
+          }));
+      } catch (err) {
+        if (err instanceof TRPCError) {
+          throw err;
+        }
+
+        console.error('[memberSearch] db query failed:', err);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to search members.',
           cause: err,
         });
       }

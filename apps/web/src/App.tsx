@@ -13,6 +13,7 @@ import './App.css';
 import {PortalLayout} from './layouts/PortalLayout';
 import {EditItem} from './pages/items/EditItem';
 import {AddItem} from './pages/items/AddItem';
+import {LoanItem} from './pages/items/LoanItem';
 
 function Layout() {
   const { session } = useAuth();
@@ -74,6 +75,9 @@ function App() {
           }
           { profile?.isHead &&
             <Route path="items/add" element={<AddItem />} />
+          }
+           { profile?.isHead &&
+            <Route path="items/loan/:itemId" element={<LoanItem />} />
           }
           {/* more protected /portal/* routes go here as the app grows */}
         </Route>
