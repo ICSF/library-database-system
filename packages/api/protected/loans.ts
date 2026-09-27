@@ -46,6 +46,7 @@ export const loansRouter = router({
             issued_at: true,
             due_at: true,
             notes: true,
+            times_renewed: true,
             member_id: true,
             members: { select: { first_name: true, last_name: true } },
             committee_loans_issued_byTocommittee: {
@@ -66,6 +67,7 @@ export const loansRouter = router({
           issued_at: openLoan.issued_at.toISOString(),
           due_at: openLoan.due_at.toISOString(),
           notes: openLoan.notes,
+          times_renewed: openLoan.times_renewed,
           member_id: openLoan.member_id,
           member_name: `${openLoan.members.first_name} ${openLoan.members.last_name}`,
           issued_by: openLoan.committee_loans_issued_byTocommittee
@@ -120,6 +122,7 @@ export const loansRouter = router({
             issued_at: true,
             due_at: true,
             notes: true,
+            times_renewed: true,
             items: {
               select: {
                 title: true,
@@ -152,6 +155,7 @@ export const loansRouter = router({
         issued_at: row.issued_at.toISOString(),
         due_at: row.due_at.toISOString(),
         notes: row.notes,
+        times_renewed: row.times_renewed,
       }));
 
       return { loans, total };
@@ -210,7 +214,7 @@ export const loansRouter = router({
             issued_by: ctx.user.id,
             returned_by: null,
             notes: input.notes,
-            reminder_count: 0,
+            times_renewed: 0,
           },
           select: { loan_id: true },
         });

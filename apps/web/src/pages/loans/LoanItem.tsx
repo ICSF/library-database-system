@@ -27,6 +27,7 @@ type LoanStatus =
       member_id: string;
       member_name: string;
       issued_by: string;
+      times_renewed: number;
     };
 
 // figure out where the link was clicked from
@@ -275,6 +276,7 @@ export function LoanItem() {
           { label: 'Issued By', value: loanStatus.issued_by },
           { label: 'Issue Date', value: formatDate(loanStatus.issued_at) },
           { label: 'Due Date', value: formatDate(loanStatus.due_at) },
+          { label: 'Times Renewed', value: loanStatus.times_renewed },
           { label: 'Notes', value: loanStatus.notes ?? '', show: !!loanStatus.notes },
         ].filter((row) => row.show !== false)
       : [];

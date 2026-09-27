@@ -13,6 +13,7 @@ type LoanRecord = {
   issued_at: string;
   due_at: string;
   notes: string | null;
+  times_renewed: number;
 };
 
 const PAGE_SIZE = 50;
@@ -130,7 +131,7 @@ export function ViewLoans() {
       <p className="help">
         Here, you can see every item currently on loan.<br/>
         Overdue loans are highlighted - the color darkens the longer a loan has been overdue.<br/>
-        Click 'Return' to view the loan and mark it as returned.
+        Click 'Manage' to view the loan and mark it as returned or to renew it. 
       </p>
 
       <form>
@@ -168,6 +169,7 @@ export function ViewLoans() {
             <th>Issued By</th>
             <th>Issue Date</th>
             <th>Due Date</th>
+            <th>Times Renewed</th>
             <th>Notes</th>
             <th>Actions</th>
           </tr>
@@ -188,9 +190,10 @@ export function ViewLoans() {
                   {formatDate(loan.due_at)}
                   {overdueClasses ? ' (Overdue)' : ''}
                 </td>
+                <td>{loan.times_renewed}</td>
                 <td>{loan.notes ?? ''}</td>
                 <td>
-                  <Link to={`/portal/items/loan/${loan.item_id}`} state={{ from: 'returns' }}>Return</Link>
+                  <Link to={`/portal/items/loan/${loan.item_id}`} state={{ from: 'returns' }}>Manage</Link>
                 </td>
               </tr>
             );
