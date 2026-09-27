@@ -93,7 +93,7 @@ model loans {
   issued_by                              String?    @db.Uuid
   returned_by                            String?    @db.Uuid
   notes                                  String?
-  reminder_count                         Int        @default(0)
+  times_renewed                          Int        @default(0)
   committee_loans_issued_byTocommittee   committee? @relation("loans_issued_byTocommittee", fields: [issued_by], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
   items                                  items      @relation(fields: [item_id], references: [item_id], onUpdate: NoAction)
   members                                members    @relation(fields: [member_id], references: [member_id], onUpdate: NoAction)
