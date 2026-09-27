@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { TRPCClientError } from '@trpc/client';
 import { trpc } from '../../lib/TRPC';
-import { formatDate, type ItemDetail } from './ItemsUtils'
+import { formatDate, type ItemDetail } from '../items/ItemsUtils'
 
 const MEMBER_SEARCH_DEBOUNCE_MS = 250;
 const LOAN_LENGTH_DAYS = 28;
@@ -29,6 +29,11 @@ type LoanStatus =
       issued_by: string;
     };
 
+// figure out where the link was clicked from
+type LoanItemLocationState = {
+  from?: 'returns';
+};
+
 // Client-side date preview only
 function previewDueDate(): string {
   const date = new Date();
@@ -46,6 +51,8 @@ function rowClass(index: number): string {
 
 export function LoanItem() {
   const { itemId } = useParams<{ itemId: string }>();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const [item, setItem] = useState<ItemDetail | null>(null);
   const [loanStatus, setLoanStatus] = useState<LoanStatus | null>(null);
@@ -240,6 +247,12 @@ export function LoanItem() {
 
     try {
       await trpc.loanReturn.mutate({ loan_id: loanStatus.loan_id });
+      const state = location.state as LoanItemLocationState | null;
+      if (state?.from === 'returns') {
+        // Reached via the Return Loans list - return there
+        navigate('/portal/loans/search');
+        return;
+      }
 
       // Re-run the data-loading effect so the page flips from "on loan"
       setReturnStatus('idle');
@@ -258,7 +271,7 @@ export function LoanItem() {
       ? [
           { label: 'Title', value: item.title},
           { label: 'Author', value: item.author_name},
-          { label: 'Borrowed By', value: loanStatus.member_name },
+          { label: 'Loaned By', value: loanStatus.member_name },
           { label: 'Issued By', value: loanStatus.issued_by },
           { label: 'Issue Date', value: formatDate(loanStatus.issued_at) },
           { label: 'Due Date', value: formatDate(loanStatus.due_at) },
@@ -270,9 +283,13 @@ export function LoanItem() {
 
   return (
     <>
-      <h1>Loan Item</h1>
+      <h1>Loan/Return Item</h1>
       <p className="help">
-        <Link to="/portal/items/search">&lt;= Back to item search</Link>
+        {location?.state?.from === 'returns' ? (
+          <Link to="/portal/loans/search">&lt;= Back to loans search</Link>
+        ) : (
+          <Link to="/portal/items/search">&lt;= Back to item search</Link>
+        )}
       </p>
 
       {loading && <p className="help">Loading item...</p>}

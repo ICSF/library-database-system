@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { protectedProcedure, router } from '../context.js';
 
 const LOAN_LENGTH_DAYS = 28;
+const MAX_PAGE_SIZE = 100;
 
 const itemLoanStatusInput = z.object({
   item_id: z.number().int().positive(),
@@ -17,6 +18,12 @@ const loanCreateInput = z.object({
 
 const loanReturnInput = z.object({
   loan_id: z.string().trim().min(1),
+});
+
+const loanListInput = z.object({
+  search: z.string().trim().default(''),
+  page: z.number().int().min(1).default(1),
+  pageSize: z.number().int().min(1).max(MAX_PAGE_SIZE).default(50),
 });
 
 // due date computed server side
@@ -78,6 +85,85 @@ export const loansRouter = router({
         });
       }
     }),
+
+  // Paginated, searchable list of every currently-open loan
+  // Always scoped to open loans only 
+  // Sort by due_at ascending
+  loanList: protectedProcedure.input(loanListInput).query(async ({ input }) => {
+    const { search, page, pageSize } = input;
+
+    const where: Prisma.loansWhereInput = {
+      returned_at: null,
+      ...(search
+        ? {
+            OR: [
+              { items: { title: { contains: search, mode: 'insensitive' as const } } },
+              {
+                items: {
+                  authors: { name: { contains: search, mode: 'insensitive' as const } },
+                },
+              },
+              { members: { first_name: { contains: search, mode: 'insensitive' as const } } },
+              { members: { last_name: { contains: search, mode: 'insensitive' as const } } },
+            ],
+          }
+        : {}),
+    };
+
+    try {
+      const [rows, total] = await Promise.all([
+        prisma.loans.findMany({
+          where,
+          select: {
+            loan_id: true,
+            item_id: true,
+            issued_at: true,
+            due_at: true,
+            notes: true,
+            items: {
+              select: {
+                title: true,
+                authors: { select: { name: true } },
+              },
+            },
+            members: { select: { first_name: true, last_name: true } },
+            committee_loans_issued_byTocommittee: {
+              select: { role: true},
+            },
+          },
+          orderBy: { due_at: 'asc' },
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+        }),
+        prisma.loans.count({ where }),
+      ]);
+
+      const loans = rows.map((row) => ({
+        // loan_id (BigInt) and item_id are both converted for the wire -
+        // item_id is a plain Int already, kept as-is for the Return link.
+        loan_id: row.loan_id.toString(),
+        item_id: row.item_id,
+        title: row.items.title,
+        author_name: row.items.authors.name,
+        member_name: `${row.members.first_name} ${row.members.last_name}`,
+        issued_by: row.committee_loans_issued_byTocommittee
+            ? row.committee_loans_issued_byTocommittee.role ?? 'Unknown'
+            : 'Unknown',
+        issued_at: row.issued_at.toISOString(),
+        due_at: row.due_at.toISOString(),
+        notes: row.notes,
+      }));
+
+      return { loans, total };
+    } catch (err) {
+      console.error('[loanList] db query failed:', err);
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Unable to load loans.',
+        cause: err,
+      });
+    }
+  }),
 
   // Issues a new loan. issued_at/due_at are always computed server-side,
   // issued_by comes from the authenticated committee user 
