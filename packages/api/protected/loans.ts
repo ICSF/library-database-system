@@ -23,7 +23,7 @@ function computeDueDate(): Date {
 }
 
 export const loansRouter = router({
-  // Returns whether an item currently has an open loan 
+  // Returns whether an item currently has an open loan, and the loan details
   itemLoanStatus: protectedProcedure
     .input(itemLoanStatusInput)
     .query(async ({ input }) => {
@@ -34,8 +34,14 @@ export const loansRouter = router({
             loan_id: true,
             issued_at: true,
             due_at: true,
+            notes: true,
             member_id: true,
             members: { select: { first_name: true, last_name: true } },
+            committee_loans_issued_byTocommittee: {
+              select: { 
+                role: true,
+            },
+            },
           },
         });
 
@@ -48,8 +54,12 @@ export const loansRouter = router({
           loan_id: openLoan.loan_id.toString(),
           issued_at: openLoan.issued_at.toISOString(),
           due_at: openLoan.due_at.toISOString(),
+          notes: openLoan.notes,
           member_id: openLoan.member_id,
           member_name: `${openLoan.members.first_name} ${openLoan.members.last_name}`,
+          issued_by: openLoan.committee_loans_issued_byTocommittee
+            ? openLoan.committee_loans_issued_byTocommittee.role ?? 'Unknown'
+            : 'Unknown',
         };
       } catch (err) {
         if (err instanceof TRPCError) {

@@ -23,8 +23,10 @@ type LoanStatus =
       loan_id: string;
       issued_at: string;
       due_at: string;
+      notes: string | null;
       member_id: string;
       member_name: string;
+      issued_by: string;
     };
 
 // Client-side date preview only
@@ -32,6 +34,14 @@ function previewDueDate(): string {
   const date = new Date();
   date.setDate(date.getDate() + LOAN_LENGTH_DAYS);
   return formatDate(date.toISOString());
+}
+
+// TODO: abstract this out
+function rowClass(index: number): string {
+  if (index === 0) {
+    return 'bg1';
+  }
+  return index % 2 === 1 ? 'bg2' : 'bg3';
 }
 
 export function LoanItem() {
@@ -203,9 +213,8 @@ export function LoanItem() {
       });
 
       // Nothing more to do on this page once the loan is issued - send
-      // the user back to the item's detail page, where the new loan
-      // status will show up on next load.
-      navigate(`/portal/items/view/${itemId}`);
+      // the user back to the item search page
+      navigate(`/portal/items/search`);
     } catch (error) {
       console.error('Failed to create loan:', error);
       setSubmitStatus('error');
@@ -214,6 +223,19 @@ export function LoanItem() {
       );
     }
   }
+
+  const loanRows =
+    loanStatus && loanStatus.onLoan && item
+      ? [
+          { label: 'Title', value: item.title},
+          { label: 'Author', value: item.author_name},
+          { label: 'Borrowed By', value: loanStatus.member_name },
+          { label: 'Issued By', value: loanStatus.issued_by },
+          { label: 'Issue Date', value: formatDate(loanStatus.issued_at) },
+          { label: 'Due Date', value: formatDate(loanStatus.due_at) },
+          { label: 'Notes', value: loanStatus.notes ?? '', show: !!loanStatus.notes },
+        ].filter((row) => row.show !== false)
+      : [];
 
   return (
     <>
@@ -228,19 +250,21 @@ export function LoanItem() {
 
       {!loading && !loadError && !notFound && item && loanStatus && (
         <>
-          <p className="help">
-            <strong>{item.title}</strong> — {item.author_name}
-          </p>
-
           {loanStatus.onLoan ? (
             <>
-              <p className="error">
-                This item is currently on loan to <strong>{loanStatus.member_name}</strong>,
-                issued {formatDate(loanStatus.issued_at)}, due back {formatDate(loanStatus.due_at)}.
-              </p>
               <p className="help">
-                It must be returned before it can be loaned out again.
+                This item is currently on loan
               </p>
+              <table className="list" width="99%">
+                <tbody>
+                  {loanRows.map((row, index) => (
+                    <tr className={rowClass(index)} key={row.label}>
+                      <th>{row.label}</th>
+                      <td>{row.value}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </>
           ) : (
             <form onSubmit={handleSubmit}>
